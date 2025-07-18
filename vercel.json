@@ -1,14 +1,12 @@
-// vercel.json
 {
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/static-build",    // 静的ビルド
-      "config": { "distDir": "dist" }    // 出力先 dist/
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
     }
   ],
   "routes": [
-    // SPA の場合はルーティングを index.html にフォールバックしたいなら追加
     { "src": "/(favicon.ico|manifest.json)", "dest": "/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
