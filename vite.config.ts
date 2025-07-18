@@ -1,15 +1,15 @@
 // vite.config.ts
+
 import { defineConfig } from 'vite'
-import react       from '@vitejs/plugin-react'
-import path        from 'path'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 export default defineConfig({
-  // 「src/ がプロジェクトのルートだよ」と教えてあげる
-  root: path.resolve(__dirname, 'src'),
-
-  // publicDir をプロジェクト直下の public/ に戻す
   publicDir: path.resolve(__dirname, 'public'),
-
   plugins: [react()],
   resolve: {
     alias: {
@@ -19,12 +19,10 @@ export default defineConfig({
     },
   },
   build: {
-    // ビルド成果物をルート直下の dist/ に出力
     outDir: path.resolve(__dirname, 'dist'),
     emptyOutDir: true,
-    // ここで「src/index.html を入口として使ってね」と Rollup に教える
     rollupOptions: {
-      input: path.resolve(__dirname, 'src/index.html')
+      input: path.resolve(__dirname, 'index.html')
     }
   }
 })
