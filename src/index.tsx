@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './index.css';
 
 // ↓ Service Worker の登録は一旦オフにします。
 // if ('serviceWorker' in navigator) {

@@ -1,5 +1,7 @@
 // src/App.tsx
 import React, { useState, useCallback } from 'react';
+import { mockTeams } from './data/mockData';
+import { mockMatches } from './data/mockData';
 import TeamManagementPage from './components/TeamManagementPage';
 import TournamentGuidelinesPage from './components/TournamentGuidelinesPage';
 import MatchesPage from './components/MatchesPage';
@@ -7,9 +9,9 @@ import { Team, Match, ChatThread, ChatMessage, TournamentInfoFormData } from './
 
 const App: React.FC = () => {
   // --- アプリ全体で使うステート ---
-  const [teams, setTeams] = useState<Team[]>([]);                  // 全チーム一覧
+  const [teams, setTeams] = useState<Team[]>(mockTeams);                  // 全チーム一覧
   const [managedTeam, setManagedTeam] = useState<Team | null>(null); // 自チーム
-  const [matches, setMatches] = useState<Match[]>([]);             // すべての試合
+  const [matches, setMatches] = useState<Match[]>(mockMatches);             // すべての試合
   const [chatThreads, setChatThreads] = useState<ChatThread[]>([]); // チャットスレッドリスト
   const [selectedGuidelineMatchId, setSelectedGuidelineMatchId] = useState<string | null>(null); // 編集対象の要項 matchId
 

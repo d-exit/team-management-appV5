@@ -7,22 +7,13 @@
     <!-- public/manifest.json はビルド時に /manifest.json として配信される -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1e293b">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@^19.1.0",
-        "react-dom": "https://esm.sh/react-dom@^19.1.0",
-        "vite": "https://esm.sh/vite@^7.0.4",
-        "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.6.0"
-      }
-    }
-    </script>
+    <!-- Tailwind CSSはnpm+PostCSS経由で適用されます -->
     <!-- index.css が存在しないので削除 -->
     <!-- <link rel="stylesheet" href="/index.css"> -->
   </head>
   <body>
     <div id="root"></div>
     <div id="modal-root"></div>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
