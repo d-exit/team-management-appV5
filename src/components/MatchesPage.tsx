@@ -2953,7 +2953,7 @@ const MatchCreationModal: React.FC<{
       date: '',
       startTime: '',
       endTime: '',
-      opponentTeamIds: [managedTeam.id], // 自チームを自動選択
+      opponentTeamIds: [], // 空配列で初期化（マッチング募集をデフォルトに）
       location: '',
       sendInviteEmail: true,
       createGroupChat: true,

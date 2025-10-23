@@ -557,9 +557,15 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="チーム名やコーチ名で検索..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={viewMode === 'teams' ? "チーム名やコーチ名で検索..." : "試合名やチーム名で検索..."}
+                  value={viewMode === 'teams' ? searchQuery : matchSearchTerm}
+                  onChange={(e) => {
+                    if (viewMode === 'teams') {
+                      setSearchQuery(e.target.value);
+                    } else {
+                      setMatchSearchTerm(e.target.value);
+                    }
+                  }}
                   className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 />
               </div>
@@ -714,32 +720,33 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
               フィルターをクリア
             </button>
             <span className="text-sm text-slate-400">
-              {filteredTeams.length}件のチームが見つかりました
+              {viewMode === 'teams' ? filteredTeams.length : filteredMatches.length}件の{viewMode === 'teams' ? 'チーム' : '試合'}が見つかりました
             </span>
           </div>
         </div>
 
         {/* チーム一覧 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTeams.map(team => (
-            <div key={team.id} className="bg-slate-800 rounded-xl p-6 shadow-2xl hover:shadow-3xl transition-shadow">
-              {/* チームヘッダー */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={team.logoUrl}
-                    alt={team.name}
-                    className="w-12 h-12 rounded-full bg-slate-600"
-                  />
-                  <div>
-                    <h3 className="font-semibold text-white text-lg">{team.name}</h3>
-                    <p className="text-sm text-slate-400">{team.coachName}</p>
+        {viewMode === 'teams' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTeams.map(team => (
+              <div key={team.id} className="bg-slate-800 rounded-xl p-6 shadow-2xl hover:shadow-3xl transition-shadow">
+                {/* チームヘッダー */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={team.logoUrl}
+                      alt={team.name}
+                      className="w-12 h-12 rounded-full bg-slate-600"
+                    />
+                    <div>
+                      <h3 className="font-semibold text-white text-lg">{team.name}</h3>
+                      <p className="text-sm text-slate-400">{team.coachName}</p>
+                    </div>
                   </div>
+
                 </div>
 
-              </div>
-
-              {/* チーム情報 */}
+                {/* チーム情報 */}
               <div className="space-y-3 mb-4">
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-slate-400" />
@@ -800,12 +807,101 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
             </div>
           ))}
         </div>
+        )}
+
+        {/* 試合一覧 */}
+        {viewMode === 'matches' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredMatches.map(match => (
+              <div key={match.id} className="bg-slate-800 rounded-xl p-6 shadow-2xl hover:shadow-3xl transition-shadow">
+                {/* 試合ヘッダー */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-sky-600 flex items-center justify-center">
+                      <Calendar className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white text-lg">{match.name}</h3>
+                      <p className="text-sm text-slate-400">{match.hostTeamName}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    match.matchType === 'training' ? 'bg-green-500 text-white' :
+                    match.matchType === 'league' ? 'bg-blue-500 text-white' :
+                    'bg-purple-500 text-white'
+                  }`}>
+                    {match.matchType === 'training' ? '練習試合' :
+                     match.matchType === 'league' ? 'リーグ戦' : 'トーナメント'}
+                  </span>
+                </div>
+
+                {/* 試合情報 */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-300">{match.date} {match.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-300">{match.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-300">主催: {match.hostTeamName} ({match.hostTeamLevel})</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Award className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-300">{match.courtCount}コート, {match.matchDuration}分</span>
+                  </div>
+                </div>
+
+                {/* 説明 */}
+                {match.description && (
+                  <div className="mb-4">
+                    <p className="text-slate-300 text-sm">{match.description}</p>
+                  </div>
+                )}
+
+                {/* アクションボタン */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      // 試合に応募する処理
+                      alert(`${match.name}に応募しました！`);
+                    }}
+                    className="flex-1 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors text-sm"
+                  >
+                    応募する
+                  </button>
+                  <button
+                    onClick={() => {
+                      // 試合詳細を表示する処理
+                      alert(`${match.name}の詳細を表示`);
+                    }}
+                    className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm"
+                  >
+                    詳細
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* チームが見つからない場合 */}
-        {filteredTeams.length === 0 && (
+        {viewMode === 'teams' && filteredTeams.length === 0 && (
           <div className="text-center py-12">
             <Search className="h-16 w-16 mx-auto mb-4 text-slate-500" />
             <h3 className="text-xl font-semibold text-slate-300 mb-2">チームが見つかりません</h3>
+            <p className="text-slate-400">検索条件を変更してお試しください</p>
+          </div>
+        )}
+
+        {/* 試合が見つからない場合 */}
+        {viewMode === 'matches' && filteredMatches.length === 0 && (
+          <div className="text-center py-12">
+            <Calendar className="h-16 w-16 mx-auto mb-4 text-slate-500" />
+            <h3 className="text-xl font-semibold text-slate-300 mb-2">試合が見つかりません</h3>
             <p className="text-slate-400">検索条件を変更してお試しください</p>
           </div>
         )}
