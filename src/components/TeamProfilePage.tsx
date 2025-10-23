@@ -1,4 +1,6 @@
 // components/TeamProfilePage.tsx
+// ...ver4の正しい内容をここに挿入...
+// components/TeamProfilePage.tsx
 // This component displays the detailed profile of a selected team.
 import React, { useMemo } from 'react';
 import { Team } from '../types';
@@ -9,6 +11,26 @@ interface TeamProfilePageProps {
   onBack: () => void;
   allTeams: Team[];
 }
+
+// 年齢カテゴリの互換変換
+const legacyToNewAgeCategory = (cat: string | undefined): 'キンダー' | '小１' | '小２' | '小３' | '小４' | '小５' | '小６' => {
+  switch (cat) {
+    case 'U-10': return '小４';
+    case 'U-12': return '小６';
+    case 'U-15': return '小６';
+    case '一般': return '小６';
+    case 'キンダー':
+    case '小１':
+    case '小２':
+    case '小３':
+    case '小４':
+    case '小５':
+    case '小６':
+      return cat as any;
+    default:
+      return 'キンダー';
+  }
+};
 
 // Helper component for displaying individual stat items
 const StatItem: React.FC<{ label: string; value: string | number; className?: string }> = ({ label, value, className }) => (
@@ -94,6 +116,8 @@ const TeamProfilePage: React.FC<TeamProfilePageProps> = ({ team, onBack, allTeam
           <h3 className="text-2xl font-semibold text-sky-300 mb-4">チーム情報</h3>
           <StatItem label="レベル" value={team.level} />
           <StatItem label="レーティング" value={team.rating} className="text-emerald-400" />
+          <StatItem label="エリア" value={team.prefecture ? (team.city ? `${team.prefecture} ${team.city}` : team.prefecture) : '未設定'} />
+          <StatItem label="年齢カテゴリ" value={team.ageCategory ? legacyToNewAgeCategory(team.ageCategory) : '未設定'} />
         </div>
         
         <div className="lg:col-span-1">

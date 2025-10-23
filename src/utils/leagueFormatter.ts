@@ -1,5 +1,7 @@
+// utils/leagueFormatter.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/leagueFormatter.ts
-import { LeagueTable } from 'types';
+import { LeagueTable } from '@/types';
 
 /**
  * Formats league table data into a readable text message for chat.

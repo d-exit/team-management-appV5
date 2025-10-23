@@ -1,3 +1,5 @@
+// utils/pdfFormatters.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/pdfFormatters.ts
 import { TournamentBracket, LeagueTable, LeagueMatch } from '../types';
 

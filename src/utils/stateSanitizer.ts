@@ -1,6 +1,8 @@
+// utils/stateSanitizer.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/stateSanitizer.ts
-import { Match, LeagueGroup } from 'types';
-import { deepClone } from 'utils/deepClone';
+import { Match, LeagueGroup } from '@/types';
+import { deepClone } from '@/utils/deepClone';
 
 /**
  * Proactively sanitizes and heals the match state. It performs a deep clone

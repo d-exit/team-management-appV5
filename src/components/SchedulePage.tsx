@@ -1,245 +1,669 @@
 // components/SchedulePage.tsx
 // This component will manage and display team schedules, including a calendar view.
-import React, { useMemo, useState } from 'react';
-import { ScheduleEvent, ScheduleEventType } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Calendar, Plus, Edit, Trash2, Eye, EyeOff, Clock, MapPin, Users, BookOpen } from 'lucide-react';
+import { Match } from '@/types';
 
-interface SchedulePageProps {
-  events: ScheduleEvent[];
-  teamId: string; // ID of the team whose schedule is being viewed/managed
-  onUpdateEvents: React.Dispatch<React.SetStateAction<ScheduleEvent[]>>;
+interface ScheduleEvent {
+  id: string;
+  title: string;
+  type: 'practice' | 'match' | 'meeting' | 'other';
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  description: string;
+  isPublic: boolean;
+  participants?: string[];
 }
 
-const getDaysInMonth = (year: number, month: number) : Date[] => {
-  const date = new Date(year, month, 1);
-  const days: Date[] = [];
-  while (date.getMonth() === month) {
-    days.push(new Date(date));
-    date.setDate(date.getDate() + 1);
-  }
-  return days;
-};
+interface SchedulePageProps {
+  onBack: () => void;
+  isAdmin?: boolean;
+  matches?: Match[];
+}
 
-const getDayName = (dayIndex: number) => ['日', '月', '火', '水', '木', '金', '土'][dayIndex];
+export const SchedulePage: React.FC<SchedulePageProps> = ({ onBack, isAdmin = false, matches = [] }) => {
+  const [events, setEvents] = useState<ScheduleEvent[]>([
+    {
+      id: '1',
+      title: '練習',
+      type: 'practice',
+      date: '2024-01-15',
+      startTime: '18:00',
+      endTime: '20:00',
+      location: 'サッカー場A',
+      description: '通常練習',
+      isPublic: true,
+    },
+    {
+      id: '2',
+      title: '試合 vs チームB',
+      type: 'match',
+      date: '2024-01-20',
+      startTime: '14:00',
+      endTime: '16:00',
+      location: 'サッカー場B',
+      description: 'リーグ戦',
+      isPublic: true,
+    },
+  ]);
 
-const initialEventFormState : Omit<ScheduleEvent, 'id' | 'teamId'> = {
-    title: '',
-    type: ScheduleEventType.PRACTICE,
-    date: new Date().toISOString().split('T')[0],
-    startTime: '10:00',
-    endTime: '12:00',
-    location: '',
-    description: '',
-};
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
-const SchedulePage: React.FC<SchedulePageProps> = ({ events, teamId, onUpdateEvents }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [eventToEdit, setEventToEdit] = useState<ScheduleEvent | null>(null);
-  const [eventFormData, setEventFormData] = useState<Omit<ScheduleEvent, 'id' | 'teamId'>>(initialEventFormState);
-  
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth(); // 0-indexed
+  // 既存の試合データを取得（App.tsxから渡される）
+  const [existingMatches, setExistingMatches] = useState<ScheduleEvent[]>([]);
 
-  const daysInMonth = useMemo(() => getDaysInMonth(year, month), [year, month]);
-  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 (Sun) - 6 (Sat)
-
-  const eventsByDate = useMemo(() => {
-    return events.reduce((acc, event) => {
-      const dateKey = event.date;
-      if (!acc[dateKey]) acc[dateKey] = [];
-      acc[dateKey].push(event);
-      return acc;
-    }, {} as Record<string, ScheduleEvent[]>);
-  }, [events]);
-  
-  const handleOpenAddModal = () => {
-    setEventToEdit(null);
-    setEventFormData(initialEventFormState);
-    setIsModalOpen(true);
+  // 月の移動
+  const goToPreviousMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
 
-  const handleOpenEditModal = (event: ScheduleEvent) => {
-    setEventToEdit(event);
-    setEventFormData({
-        title: event.title,
-        type: event.type,
-        date: event.date,
-        startTime: event.startTime,
-        endTime: event.endTime,
-        location: event.location,
-        description: event.description
-    });
-    setIsModalOpen(true);
-  };
-  
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEventToEdit(null);
+  const goToNextMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
-  const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-  const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-  const handleToday = () => setCurrentDate(new Date());
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setEventFormData(prev => ({ ...prev, [name]: value }));
+  const goToCurrentMonth = () => {
+    setCurrentMonth(new Date());
+    setSelectedDate(new Date().toISOString().split('T')[0]);
   };
 
-  const handleSaveEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    onUpdateEvents(prevEvents => {
-      let newEvents: ScheduleEvent[];
-      if (eventToEdit) { // Editing existing event
-        const updatedEvent = { ...eventToEdit, ...eventFormData };
-        newEvents = prevEvents.map(ev => ev.id === eventToEdit.id ? updatedEvent : ev);
-      } else { // Adding new event
-        const fullNewEvent: ScheduleEvent = {
-          ...eventFormData,
-          id: `event-${Date.now()}`,
-          teamId: teamId,
-        };
-        newEvents = [...prevEvents, fullNewEvent];
-      }
-      // Sort the new array and return it for the state update
-      return newEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.startTime.localeCompare(b.startTime));
-    });
-    handleCloseModal();
+  // 月の名前を取得
+  const getMonthName = (date: Date) => {
+    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' });
   };
-  
+
+  // 既存の試合をイベントとして追加
+  useEffect(() => {
+    // App.tsxから渡された試合データをScheduleEvent形式に変換
+    const convertedMatches: ScheduleEvent[] = matches.map(match => ({
+      id: `match-${match.id}`,
+      title: `${match.type} vs ${match.opponentTeamName || '対戦相手'}`,
+      type: 'match',
+      date: match.date,
+      startTime: match.time || '00:00',
+      endTime: match.time ? (() => {
+        // 試合時間を推定（デフォルト2時間）
+        const [h, m] = match.time.split(':').map(Number);
+        const endTime = new Date(2024, 0, 1, h + 2, m);
+        return `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+      })() : '02:00',
+      location: match.location || '未定',
+      description: match.notes || '',
+      isPublic: true,
+    }));
+    setExistingMatches(convertedMatches);
+  }, [matches]);
+
+  // すべてのイベント（既存のイベント + 既存の試合）
+  const allEvents = useMemo(() => {
+    return [...events, ...existingMatches];
+  }, [events, existingMatches]);
+
+  const eventTypes = {
+    practice: { label: '練習', icon: Users, color: 'bg-blue-500' },
+    match: { label: '試合', icon: BookOpen, color: 'bg-green-500' },
+    meeting: { label: 'ミーティング', icon: Users, color: 'bg-yellow-500' },
+    other: { label: 'その他', icon: Calendar, color: 'bg-purple-500' },
+  };
+
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  const getEventsForDate = (date: string) => {
+    return allEvents.filter(event => event.date === date);
+  };
+
+  const handleAddEvent = (event: Omit<ScheduleEvent, 'id'>) => {
+    const newEvent: ScheduleEvent = {
+      ...event,
+      id: `event-${Date.now()}`,
+    };
+    setEvents(prev => [...prev, newEvent]);
+    setShowAddModal(false);
+  };
+
+  const handleEditEvent = (event: ScheduleEvent) => {
+    setEditingEvent(event);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateEvent = (updatedEvent: ScheduleEvent) => {
+    setEvents(prev => prev.map(event => 
+      event.id === updatedEvent.id ? updatedEvent : event
+    ));
+    setShowEditModal(false);
+    setEditingEvent(null);
+  };
+
   const handleDeleteEvent = (eventId: string) => {
-    if(window.confirm('この予定を本当に削除しますか？')) {
-        onUpdateEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+    if (window.confirm('このイベントを削除しますか？')) {
+      setEvents(prev => prev.filter(event => event.id !== eventId));
     }
   };
 
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-semibold text-sky-300">スケジュール</h2>
-         <button
-            onClick={handleOpenAddModal}
-            className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:shadow-lg transition"
+  const renderCalendar = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDay = getFirstDayOfMonth(year, month);
+
+    const days = [];
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="p-2" />);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = getEventsForDate(dateString);
+      const isToday = dateString === new Date().toISOString().split('T')[0];
+      const isSelected = dateString === selectedDate;
+
+      days.push(
+        <div
+          key={day}
+          className={`p-2 border border-slate-600 min-h-[100px] cursor-pointer hover:bg-slate-700 transition-colors ${
+            isToday ? 'bg-sky-500/20 border-sky-400' : ''
+          } ${isSelected ? 'bg-sky-600/30 border-sky-500' : ''}`}
+          onClick={() => setSelectedDate(dateString)}
         >
-            予定を追加
-        </button>
-      </div>
-
-      {/* Add/Edit Event Form Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <form onSubmit={handleSaveEvent} className="bg-slate-800 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-lg space-y-4">
-            <h3 className="text-2xl font-semibold text-sky-400 mb-3">{eventToEdit ? '予定の編集' : '新しい予定を追加'}</h3>
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-slate-300 mb-1">タイトル</label>
-              <input type="text" name="title" id="title" value={eventFormData.title} onChange={handleInputChange} required className="w-full bg-slate-700 border border-slate-600 text-white rounded-md p-2"/>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label htmlFor="type" className="block text-sm font-medium text-slate-300 mb-1">種類</label>
-                    <select name="type" id="type" value={eventFormData.type} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 text-white rounded-md p-2">
-                        {Object.values(ScheduleEventType).map(type => <option key={type} value={type}>{type}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label htmlFor="date" className="block text-sm font-medium text-slate-300 mb-1">日付</label>
-                    <input type="date" name="date" id="date" value={eventFormData.date} onChange={handleInputChange} required className="w-full bg-slate-700 border border-slate-600 text-white rounded-md p-2"/>
-                </div>
-                 <div>
-                    <label htmlFor="startTime" className="block text-sm font-medium text-slate-300 mb-1">開始時刻</label>
-                    <input type="time" name="startTime" id="startTime" value={eventFormData.startTime} onChange={handleInputChange} required className="w-full bg-slate-700 border border-slate-600 text-white rounded-md p-2"/>
-                </div>
-                 <div>
-                    <label htmlFor="endTime" className="block text-sm font-medium text-slate-300 mb-1">終了時刻</label>
-                    <input type="time" name="endTime" id="endTime" value={eventFormData.endTime} onChange={handleInputChange} required className="w-full bg-slate-700 border border-slate-600 text-white rounded-md p-2"/>
-                </div>
-            </div>
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-slate-300 mb-1">場所</label>
-              <input type="text" name="location" id="location" value={eventFormData.location} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 text-white rounded-md p-2"/>
-            </div>
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">詳細</label>
-              <textarea name="description" id="description" value={eventFormData.description} onChange={handleInputChange} rows={3} className="w-full bg-slate-700 border border-slate-600 text-white rounded-md p-2"></textarea>
-            </div>
-            <div className="flex gap-4 pt-2">
-                <button type="button" onClick={handleCloseModal} className="w-1/2 bg-slate-600 hover:bg-slate-500 text-white font-semibold py-2 px-4 rounded-lg transition">キャンセル</button>
-                <button type="submit" className="w-1/2 bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition">{eventToEdit ? '保存' : '追加'}</button>
-            </div>
-          </form>
+          <div className="text-sm font-medium mb-1">{day}</div>
+          <div className="space-y-1">
+                                    {dayEvents.map(event => (
+                          <div
+                            key={event.id}
+                            className={`text-xs p-1 rounded ${
+                              eventTypes[event.type].color
+                            } text-white truncate cursor-pointer hover:opacity-80 transition-opacity`}
+                            title={event.title}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEventClick(event);
+                            }}
+                          >
+                            {event.title}
+                          </div>
+                        ))}
+          </div>
         </div>
-      )}
+      );
+    }
 
-
-      {/* Calendar Controls */}
-      <div className="flex justify-between items-center bg-slate-800 p-4 rounded-xl shadow-xl">
-        <button onClick={handlePrevMonth} className="px-4 py-2 bg-sky-600 hover:bg-sky-700 rounded-md">&lt; 前の月</button>
-        <h3 className="text-xl font-semibold text-sky-300">{year}年 {month + 1}月</h3>
-        <button onClick={handleToday} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-md">今日</button>
-        <button onClick={handleNextMonth} className="px-4 py-2 bg-sky-600 hover:bg-sky-700 rounded-md">次の月 &gt;</button>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="bg-slate-800 p-1 sm:p-2 rounded-xl shadow-xl overflow-x-auto">
-        <div className="grid grid-cols-7 gap-px">
+    return (
+      <div className="bg-slate-800 rounded-xl p-6 shadow-2xl">
+        {/* 月の表示とナビゲーション */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={goToPreviousMonth}
+            className="p-2 text-slate-400 hover:text-white rounded-lg transition-colors hover:bg-slate-700"
+          >
+            ← 前月
+          </button>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white">{getMonthName(currentMonth)}</h2>
+            <button
+              onClick={goToCurrentMonth}
+              className="text-sm text-slate-400 hover:text-white transition-colors"
+            >
+              今月に戻る
+            </button>
+          </div>
+          <button
+            onClick={goToNextMonth}
+            className="p-2 text-slate-400 hover:text-white rounded-lg transition-colors hover:bg-slate-700"
+          >
+            翌月 →
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1 mb-4">
           {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-            <div key={day} className="text-center font-semibold text-sky-400 py-2 text-xs sm:text-sm">{day}</div>
+            <div key={day} className="p-2 text-center font-medium text-slate-300">
+              {day}
+            </div>
           ))}
-          {Array(firstDayOfMonth).fill(null).map((_, i) => <div key={`empty-${i}`} className="border border-slate-700 h-20 sm:h-28"></div>)}
-          {daysInMonth.map(day => {
-            const dayKey = day.toISOString().split('T')[0];
-            const dayEvents = eventsByDate[dayKey] || [];
-            const isToday = dayKey === new Date().toISOString().split('T')[0];
-            return (
-              <div key={dayKey} className={`border border-slate-700 p-1.5 sm:p-2 h-24 sm:h-32 overflow-y-auto ${isToday ? 'bg-sky-900/50' : ''}`}>
-                <div className={`text-xs sm:text-sm font-medium ${isToday ? 'text-sky-300 font-bold' : 'text-slate-300'}`}>{day.getDate()}</div>
-                <div className="mt-1 space-y-1">
-                  {dayEvents.map(event => (
-                    <div key={event.id} className={`p-1 rounded text-xs truncate ${
-                        event.type === ScheduleEventType.MATCH ? 'bg-red-500/70 hover:bg-red-400/70' :
-                        event.type === ScheduleEventType.PRACTICE ? 'bg-green-500/70 hover:bg-green-400/70' :
-                        event.type === ScheduleEventType.MEETING ? 'bg-yellow-500/70 hover:bg-yellow-400/70' :
-                        'bg-purple-500/70 hover:bg-purple-400/70'
-                    } text-white`} title={`${event.title} (${event.startTime}-${event.endTime})`}>
-                      {event.title}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {days}
+        </div>
+      </div>
+    );
+  };
+
+  const renderEventList = () => {
+    // 今日から1週間分のイベントを表示
+    const today = new Date();
+    const weekEvents = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
+      const dayEvents = getEventsForDate(dateString);
+      
+      if (dayEvents.length > 0) {
+        weekEvents.push({
+          date: dateString,
+          dateLabel: date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', weekday: 'short' }),
+          events: dayEvents
+        });
+      }
+    }
+
+    return (
+      <div className="bg-slate-800 rounded-xl p-6 shadow-2xl">
+        <h3 className="text-xl font-semibold text-sky-400 mb-4">
+          今週のスケジュール
+        </h3>
+        {weekEvents.length === 0 ? (
+          <div className="text-center py-8 text-slate-400">
+            <Calendar className="h-12 w-12 mx-auto mb-4 text-slate-500" />
+            <p>今週のイベントはありません</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {weekEvents.map(({ date, dateLabel, events }) => (
+              <div key={date} className="border-b border-slate-700 pb-4 last:border-b-0">
+                <h4 className="text-lg font-medium text-white mb-3">{dateLabel}</h4>
+                <div className="space-y-3">
+                  {events.map(event => (
+                    <div key={event.id} className="bg-slate-700 rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className={`p-1 rounded ${eventTypes[event.type].color}`}>
+                              {React.createElement(eventTypes[event.type].icon, { className: 'h-4 w-4 text-white' })}
+                            </div>
+                            <h5 className="font-medium text-white">{event.title}</h5>
+                            {event.isPublic ? (
+                              <Eye className="h-4 w-4 text-green-400" />
+                            ) : (
+                              <EyeOff className="h-4 w-4 text-slate-400" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-slate-300">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              {event.startTime} - {event.endTime}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              {event.location}
+                            </div>
+                          </div>
+                          {event.description && (
+                            <p className="text-sm text-slate-400 mt-2">{event.description}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditEvent(event)}
+                            className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-      
-      {/* Event List View for the month */}
-      <div className="mt-8">
-        <h3 className="text-2xl font-semibold text-sky-300 mb-4">{year}年 {month + 1}月の予定一覧</h3>
-        {events.filter(e => new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month).length > 0 ? (
-            <ul className="space-y-3">
-                {events
-                    .filter(e => new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month)
-                    .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.startTime.localeCompare(b.startTime))
-                    .map(event => (
-                    <li key={event.id} className="bg-slate-800 p-4 rounded-lg shadow-lg flex justify-between items-center">
-                        <div>
-                            <p className="font-semibold text-sky-400 text-lg">{new Date(event.date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })} ({getDayName(new Date(event.date).getDay())}) - {event.title} <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-sky-300">{event.type}</span></p>
-                            <p className="text-sm text-slate-300">{event.startTime} - {event.endTime} {event.location && ` @ ${event.location}`}</p>
-                            {event.description && <p className="text-sm text-slate-400 mt-1 whitespace-pre-line">{event.description}</p>}
-                        </div>
-                        <div className="flex gap-2 flex-shrink-0 ml-4">
-                            <button onClick={() => handleOpenEditModal(event)} className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1 px-3 text-xs rounded-md transition">編集</button>
-                            <button onClick={() => handleDeleteEvent(event.id)} className="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 text-xs rounded-md transition">削除</button>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-        ) : (
-            <p className="text-slate-400">この月の予定はありません。</p>
+            ))}
+          </div>
         )}
       </div>
+    );
+  };
 
+  // イベント詳細モーダル
+  const [showEventDetail, setShowEventDetail] = useState(false);
+  const [selectedEventDetail, setSelectedEventDetail] = useState<ScheduleEvent | null>(null);
+
+  const handleEventClick = (event: ScheduleEvent) => {
+    setSelectedEventDetail(event);
+    setShowEventDetail(true);
+  };
+
+  const renderEventDetailModal = () => {
+    if (!selectedEventDetail) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md border border-slate-600">
+          <div className="flex items-center gap-2 mb-4">
+            <div className={`p-2 rounded ${eventTypes[selectedEventDetail.type].color}`}>
+              {React.createElement(eventTypes[selectedEventDetail.type].icon, { className: 'h-6 w-6 text-white' })}
+            </div>
+            <h3 className="text-lg font-semibold text-white">{selectedEventDetail.title}</h3>
+          </div>
+          
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center gap-2 text-slate-300">
+              <Calendar className="h-4 w-4" />
+              <span>{selectedEventDetail.date}</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-300">
+              <Clock className="h-4 w-4" />
+              <span>{selectedEventDetail.startTime} - {selectedEventDetail.endTime}</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-300">
+              <MapPin className="h-4 w-4" />
+              <span>{selectedEventDetail.location}</span>
+            </div>
+            {selectedEventDetail.description && (
+              <div className="text-slate-300">
+                <p className="text-sm">{selectedEventDetail.description}</p>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-slate-300">
+              {selectedEventDetail.isPublic ? (
+                <>
+                  <Eye className="h-4 w-4 text-green-400" />
+                  <span>公開イベント</span>
+                </>
+              ) : (
+                <>
+                  <EyeOff className="h-4 w-4 text-slate-400" />
+                  <span>非公開イベント</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setShowEventDetail(false);
+                setSelectedEventDetail(null);
+                handleEditEvent(selectedEventDetail);
+              }}
+              className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+            >
+              編集
+            </button>
+            <button
+              onClick={() => setShowEventDetail(false)}
+              className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* ヘッダー */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-sky-400 mb-2">スケジュール管理</h1>
+            <p className="text-slate-400">練習、試合、ミーティングなどのスケジュールを管理できます</p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setViewMode(viewMode === 'calendar' ? 'list' : 'calendar')}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
+            >
+              {viewMode === 'calendar' ? 'リスト表示' : 'カレンダー表示'}
+            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                イベント追加
+              </button>
+            )}
+            <button
+              onClick={onBack}
+              className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
+            >
+              戻る
+            </button>
+          </div>
+        </div>
+
+        {/* メインコンテンツ */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* カレンダー */}
+          <div className="lg:col-span-2">
+            {viewMode === 'calendar' ? renderCalendar() : renderEventList()}
+          </div>
+
+          {/* サイドバー */}
+          <div className="space-y-6">
+
+
+            {/* イベントタイプ凡例 */}
+            <div className="bg-slate-800 rounded-xl p-6 shadow-2xl">
+              <h3 className="text-lg font-semibold text-sky-400 mb-4">イベントタイプ</h3>
+              <div className="space-y-2">
+                {Object.entries(eventTypes).map(([key, { label, icon: Icon, color }]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <div className={`p-1 rounded ${color}`}>
+                      <Icon className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-sm text-slate-300">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 統計 */}
+            <div className="bg-slate-800 rounded-xl p-6 shadow-2xl">
+              <h3 className="text-lg font-semibold text-sky-400 mb-4">統計</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-slate-300">総イベント数</span>
+                  <span className="font-medium">{allEvents.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-300">公開イベント</span>
+                  <span className="font-medium">{allEvents.filter(e => e.isPublic).length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-300">非公開イベント</span>
+                  <span className="font-medium">{allEvents.filter(e => !e.isPublic).length}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* イベント追加モーダル */}
+      {showAddModal && (
+        <EventModal
+          onSave={handleAddEvent}
+          onCancel={() => setShowAddModal(false)}
+          eventTypes={eventTypes}
+        />
+      )}
+
+      {/* イベント編集モーダル */}
+      {showEditModal && editingEvent && (
+        <EventModal
+          event={editingEvent}
+          onSave={handleUpdateEvent}
+          onCancel={() => {
+            setShowEditModal(false);
+            setEditingEvent(null);
+          }}
+          eventTypes={eventTypes}
+        />
+      )}
+
+      {/* イベント詳細モーダル */}
+      {showEventDetail && renderEventDetailModal()}
     </div>
   );
 };
 
-export default SchedulePage;
+// イベントモーダルコンポーネント
+interface EventModalProps {
+  event?: ScheduleEvent;
+  onSave: (event: ScheduleEvent) => void;
+  onCancel: () => void;
+  eventTypes: Record<string, { label: string }>;
+}
+
+const EventModal: React.FC<EventModalProps> = ({ event, onSave, onCancel, eventTypes }) => {
+  const [formData, setFormData] = useState({
+    title: event?.title || '',
+    type: event?.type || 'practice',
+    date: event?.date || new Date().toISOString().split('T')[0],
+    startTime: event?.startTime || '',
+    endTime: event?.endTime || '',
+    location: event?.location || '',
+    description: event?.description || '',
+    isPublic: event?.isPublic ?? true,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const eventToSave: ScheduleEvent = {
+      id: event?.id || `event-${Date.now()}`,
+      ...formData,
+      participants: event?.participants || []
+    };
+    onSave(eventToSave);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md border border-slate-600">
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {event ? 'イベント編集' : 'イベント追加'}
+        </h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">タイトル</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">タイプ</label>
+            <select
+              value={formData.type}
+              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+            >
+              {Object.entries(eventTypes).map(([key, { label }]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">日付</label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">場所</label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">開始時刻</label>
+              <input
+                type="time"
+                value={formData.startTime}
+                onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">終了時刻</label>
+              <input
+                type="time"
+                value={formData.endTime}
+                onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">説明</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 min-h-[100px]"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isPublic"
+              checked={formData.isPublic}
+              onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+              className="rounded border-slate-600 bg-slate-700 text-sky-500 focus:ring-sky-500"
+            />
+            <label htmlFor="isPublic" className="text-sm text-slate-300">
+              公開設定（すべてのメンバーに表示）
+            </label>
+          </div>
+
+          <div className="flex gap-2 mt-6">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors"
+            >
+              {event ? '更新' : '追加'}
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
+            >
+              キャンセル
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

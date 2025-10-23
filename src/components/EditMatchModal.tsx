@@ -1,3 +1,6 @@
+// components/EditMatchModal.tsx
+// ...ver4の正しい内容をここに挿入...
+
 
 // components/EditMatchModal.tsx
 import React, { useState, useCallback, forwardRef, useImperativeHandle, useEffect } from 'react';
@@ -40,7 +43,6 @@ const EditMatchModal = forwardRef<EditMatchModalRef, EditMatchModalProps>(({ onS
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
-
 
   const handleClose = useCallback(() => {
     setIsOpen(false);

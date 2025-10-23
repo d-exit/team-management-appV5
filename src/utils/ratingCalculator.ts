@@ -1,3 +1,5 @@
+// utils/ratingCalculator.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/ratingCalculator.ts
 
 const K_FACTOR = 32;

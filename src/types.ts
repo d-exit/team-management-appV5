@@ -1,15 +1,22 @@
+// types.ts
+// ...ver4の正しい内容をここに挿入...
 export enum TeamLevel {
   BEGINNER = "初級",
   INTERMEDIATE = "中級",
-  ADVANCED = "上級",
-  PROFESSIONAL = "プロフェッショナル"
+  ADVANCED = "上級"
 }
 
+export type MemberRole = 'admin' | 'editor' | 'member';
 export interface Member {
   id: string;
   name: string;
   jerseyNumber: number;
   position: string;
+  positions: string[]; // 複数ポジション対応
+  email?: string;
+  role?: MemberRole;
+  invited?: boolean; // 招待中
+  approved?: boolean; // 承認済み
 }
 
 export interface Team {
@@ -26,7 +33,10 @@ export interface Team {
   prefecture?: string; // Added for filtering
   city?: string;       // Added for filtering
   availableSlotsText?: "空き" | "週末のみ空き" | "×"; // For matchmaking/followed teams preview
-  ageCategory?: "U-10" | "U-12" | "U-15" | "一般"; // For matchmaking
+  ageCategory?: "U6" | "U7" | "U8" | "U9" | "U10" | "U11" | "U12" | "kindergarten_older" | "kindergarten_younger"; // 年齢カテゴリを修正
+  ownerId?: string; // チーム作成者（管理者）
+  ownerEmail?: string; // チーム作成者のメールアドレス
+  staffMembers?: Member[]; // 管理・編集メンバー
 }
 
 // Enum for navigation views
@@ -40,7 +50,19 @@ export enum View {
   CHAT_LIST = "CHAT_LIST",
   CHAT_SCREEN = "CHAT_SCREEN", 
   MATCHMAKING = "MATCHMAKING",
-  TOURNAMENT_GUIDELINES = "TOURNAMENT_GUIDELINES"
+  TOURNAMENT_GUIDELINES = "TOURNAMENT_GUIDELINES",
+  TABLE_CREATION = "TABLE_CREATION",
+  // 庶務機能
+  ADMINISTRATIVE = "ADMINISTRATIVE",
+  ANNOUNCEMENTS = "ANNOUNCEMENTS",
+  ATTENDANCE = "ATTENDANCE",
+  MEMBER_INFO = "MEMBER_INFO",
+  MERCHANDISE = "MERCHANDISE",
+  PAYMENT = "PAYMENT",
+  // メンバー機能
+  MEMBER_PROFILE = "MEMBER_PROFILE",
+  // チーム招待機能
+  TEAM_INVITATIONS = "TEAM_INVITATIONS"
 }
 
 // For Matches
@@ -52,6 +74,7 @@ export enum MatchType {
 
 export enum MatchStatus {
   PREPARATION = "準備中",    // In Preparation
+  READY = "準備完了",        // Ready
   IN_PROGRESS = "開催中",    // In Progress
   FINISHED = "終了",         // Finished
 }
@@ -68,6 +91,7 @@ export interface MatchParticipant {
 }
 
 export interface MatchScoringEvent {
+  id: string;
   period: '前半' | '後半';
   minute: number;
   scorerName: string;
@@ -115,6 +139,9 @@ export interface TournamentInfoFormData {
   matchFormat: { 
     playersPerTeam: string; 
     goalSpecifications: string; 
+    matchDuration?: string; // 追加: 試合時間
+    halfTime?: string;      // 追加: ハーフタイム
+    breakTime?: string;     // 追加: 休憩時間
   };
   refereeSystem: string; 
   competitionRules: string; 
@@ -223,6 +250,17 @@ export interface LeagueTable {
   id: string;
   name: string; // Name of the league/season
   groups: LeagueGroup[]; // This structure directly holds group assignments.
+  hasFinalRound?: boolean;
+  finalRound?: any;
+  settings?: {
+    numGroups: number;
+    teamsPerGroup: number;
+    advanceTeamsPerGroup: number;
+    numberOfCourts: number;
+    eventStartTime: string;
+    matchDurationInMinutes: number;
+    restTimeInMinutes: number;
+  };
 }
 
 // --- Advanced League Competition Types ---
@@ -244,12 +282,26 @@ export interface LeagueCompetition {
 // ---- End of Competition Types ----
 
 
+// --- SubMatch for Training Matches ---
+export interface SubMatch {
+  id: string;
+  date: string; // 実施日
+  time: string; // 開始時刻
+  ourScore?: number;
+  opponentScore?: number;
+  manualWinnerId?: string | null;
+  scoringEvents?: MatchScoringEvent[];
+  participants?: MatchParticipant[];
+  notes?: string;
+}
+
 export interface Match {
   id: string;
   type: MatchType;
   status: MatchStatus;
   ourTeamId: string;      
   opponentTeamId?: string; 
+  opponentTeamIds?: string[]; // 複数の対戦相手に対応
   opponentTeamName?: string; 
   date: string;           
   time: string;           
@@ -262,11 +314,34 @@ export interface Match {
   bracketData?: TournamentBracket; // Optional data for tournament matches
   leagueCompetitionData?: LeagueCompetition; // Optional data for league matches with preliminary/final rounds
   preparationList?: string[]; 
+  // --- 主催・招待情報 ---
+  hostTeamId?: string; // 主催チームID
+  isInvitation?: boolean; // 招待の試合かどうか
+  invitationStatus?: 'pending' | 'accepted' | 'declined'; // 招待の状態
+  // --- 練習試合用: サブ試合リスト ---
+  subMatches?: SubMatch[]; // type === TRAINING のときのみ利用
+  // --- 従来の単一試合用（リーグ・トーナメント・旧練習試合）---
   ourScore?: number;
   opponentScore?: number;
   manualWinnerId?: string | null; // For training match draws
   scoringEvents?: MatchScoringEvent[];
   participants?: MatchParticipant[];
+  records?: {
+    results: Array<{
+      matchId: string;
+      ourScore: number;
+      opponentScore: number;
+      winner: 'our' | 'opponent' | 'draw';
+      goals?: Array<{
+        id: string;
+        scorerName: string;
+        period: '前半' | '後半';
+        minute?: number;
+        assistName?: string;
+      }>;
+    }>;
+    additionalTrainingMatches: number;
+  };
   notes?: string;
 }
 

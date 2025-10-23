@@ -1,4 +1,6 @@
 // components/ChatScreen.tsx
+// ...ver4の正しい内容をここに挿入...
+// components/ChatScreen.tsx
 // This component displays the UI for an individual, active chat conversation.
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatThread, ChatMessage, Team } from '../types';

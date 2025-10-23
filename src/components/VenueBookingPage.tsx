@@ -1,4 +1,6 @@
 // components/VenueBookingPage.tsx
+// ...ver4の正しい内容をここに挿入...
+// components/VenueBookingPage.tsx
 // This component will handle searching for venues and booking them.
 import React, { useState } from 'react';
 import { Venue, Team } from '../types';

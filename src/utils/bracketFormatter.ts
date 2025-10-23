@@ -1,5 +1,7 @@
+// utils/bracketFormatter.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/bracketFormatter.ts
-import { TournamentBracket } from 'types';
+import { TournamentBracket } from '@/types';
 
 /**
  * Formats tournament bracket data into a readable text message for chat.

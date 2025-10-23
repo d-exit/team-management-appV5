@@ -1,5 +1,7 @@
+// utils/bracketGenerator.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/bracketGenerator.ts
-import { BracketMatch, BracketRound, Team, TournamentBracket } from 'types';
+import { BracketMatch, BracketRound, Team, TournamentBracket } from '@/types';
 
 // Helper function to add minutes to a time string (HH:mm)
 const addMinutesToTime = (time: string, minutes: number): string => {

@@ -1,5 +1,7 @@
+// utils/validation.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/validation.ts
-import { Match, LeagueGroup } from 'types';
+import { Match, LeagueGroup } from '@/types';
 
 /**
  * Validates the integrity of the matches state, specifically checking for

@@ -1,6 +1,6 @@
 // components/FollowedTeamsPage.tsx
-import React, { useMemo, useState } from 'react';
-import { FollowedTeam, Team } from '../types';
+import React, { useState, useMemo } from 'react';
+import { FollowedTeam, Team, TeamLevel } from '../types';
 
 interface FollowedTeamsPageProps {
   followedTeams: FollowedTeam[];
@@ -20,6 +20,10 @@ const FollowedTeamsPage: React.FC<FollowedTeamsPageProps> = ({
   const [filterCity, setFilterCity] = useState(''); // For simplicity, city filter is text input
   const [searchTerm, setSearchTerm] = useState(''); // For team name search
 
+  const handleChat = (team: Team) => {
+    alert(`${team.name}とのチャットを開始します。`);
+  };
+
   const filteredFollowedTeams = useMemo(() => {
     return followedTeams.filter(team => {
       const prefectureMatch = filterPrefecture ? team.prefecture === filterPrefecture : true;
@@ -30,8 +34,7 @@ const FollowedTeamsPage: React.FC<FollowedTeamsPageProps> = ({
   }, [followedTeams, filterPrefecture, filterCity, searchTerm]);
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl sm:text-3xl font-semibold text-sky-300">フォロー中のチーム一覧</h2>
+    <div className="space-y-4">
 
       <div className="bg-slate-800 p-4 sm:p-6 rounded-xl shadow-xl space-y-3 sm:space-y-4 md:flex md:flex-wrap md:gap-3 items-end">
         <div>
@@ -75,9 +78,14 @@ const FollowedTeamsPage: React.FC<FollowedTeamsPageProps> = ({
                 </p>
                 
                 <div className="space-y-1 mt-auto">
-                  <button onClick={() => onSelectTeam(team)} className="w-full text-xs bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 px-2.5 rounded-md transition">
-                    詳細
-                  </button>
+                  <div className="flex gap-1">
+                    <button onClick={() => onSelectTeam(team)} className="flex-1 text-xs bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 px-2.5 rounded-md transition">
+                      詳細
+                    </button>
+                    <button onClick={() => handleChat(team)} className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-2.5 rounded-md transition">
+                      チャット
+                    </button>
+                  </div>
                   <div className="flex gap-1">
                     <button onClick={() => onToggleFavorite(team.id)} className={`w-1/2 text-xs font-medium py-2 px-2 rounded-md transition ${team.isFavorite ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-slate-700 hover:bg-slate-600'}`}>
                       {team.isFavorite ? '★解除' : '☆追加'}
@@ -95,22 +103,13 @@ const FollowedTeamsPage: React.FC<FollowedTeamsPageProps> = ({
         <p className="text-center text-slate-400 text-lg sm:text-xl py-8 sm:py-10">条件に合うフォロー中のチームはありません。</p>
       )}
       
-       <div className="mt-10 pt-6 border-t border-slate-700">
-        <h3 className="text-xl sm:text-2xl font-semibold text-sky-300 mb-3">新しいチームを探す (簡易表示)</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-3">
-            {allTeams.filter(t => t.id !== managedTeamId && !followedTeams.find(ft => ft.id === t.id)).slice(0,3).map(teamToFollow => (
-                 <div key={teamToFollow.id} className="bg-slate-700 p-3 rounded-lg">
-                    <h4 className="font-semibold text-sky-400 text-sm sm:text-base truncate">{teamToFollow.name}</h4>
-                    <p className="text-xs text-slate-300 truncate">{teamToFollow.prefecture}</p>
-                    <button onClick={() => onUnfollow(teamToFollow)} className="mt-2 w-full text-xs sm:text-sm bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-3 rounded-md transition">
-                        フォローする
-                    </button>
-                 </div>
-            ))}
-        </div>
-      </div>
+
     </div>
   );
 };
 
 export default FollowedTeamsPage;
+
+
+
+

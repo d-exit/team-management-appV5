@@ -1,3 +1,5 @@
+// utils/pdfGenerator.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/pdfGenerator.ts
 import { TournamentInfoFormData, TournamentBracket, LeagueTable } from '../types';
 import { formatBracketForPdf, formatLeagueForPdf } from './pdfFormatters';
@@ -101,7 +103,38 @@ export const prepareTournamentPDFContent = (
   };
 
   const styles = `
-    /* (省略: 先ほどと同じスタイル定義) */
+    body { font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; line-height: 1.3; color: #333; margin: 8px; background-color: #fff; }
+    h1 { text-align: center; font-size: 1.2em; margin-bottom: 0.7em; border-bottom: 1px solid #3498db; padding-bottom: 0.2em; color: #2c3e50; }
+    h2 { font-size: 1em; color: #2980b9; border-bottom: 1px solid #bdc3c7; padding-bottom: 0.1em; margin-top: 0.7em; margin-bottom: 0.4em; }
+    .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+    section { padding: 3px; border-radius: 3px; break-inside: avoid; }
+    section.full-width { grid-column: 1 / -1; }
+    p { margin: 0.2em 0; font-size: 0.85em; }
+    strong { color: #34495e; min-width: 60px; display: inline-block; font-size: 0.85em; }
+    .pre-wrap { white-space: pre-wrap; word-wrap: break-word; background-color: #f9f9f9; padding: 4px; border-radius: 3px; border: 1px solid #eee; margin-top: 0.2em; font-size: 0.8em; }
+    .page-break { page-break-before: always; }
+    .fixture-title { font-size: 1em; color: #2c3e50; text-align: center; margin-top: 0.7em; margin-bottom: 0.4em; }
+    /* Fixture Styles */
+    .bracket-container { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+    .bracket-round { display: flex; flex-direction: column; align-items: center; margin: 0 4px; }
+    .bracket-round-title { font-weight: bold; text-align: center; margin-bottom: 6px; font-size: 0.9em;}
+    .bracket-match { background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; padding: 3px; margin-bottom: 7px; width: 110px; }
+    .match-teams { display: flex; justify-content: space-between; padding: 1px 0; border-bottom: 1px solid #ddd; }
+    .match-teams:last-child { border-bottom: none; }
+    .team { flex-grow: 1; font-size: 0.8em; }
+    .score { font-weight: bold; min-width: 18px; text-align: right; font-size: 0.8em; }
+    .league-table { width: 100%; border-collapse: collapse; font-size: 0.7em; margin-top: 4px; }
+    .league-group-title { font-size: 0.9em; font-weight: bold; margin-top: 0.5em; margin-bottom: 0.2em; }
+    .league-table th, .league-table td { border: 1px solid #ccc; padding: 2px 3px; text-align: center; }
+    .league-table th { background-color: #e9ecef; }
+    .league-table td.team-name-cell { text-align: left; }
+    .fixture-list-title { font-size: 0.9em; font-weight: bold; margin-top: 1em; margin-bottom: 0.2em; }
+    .fixture-table { width: 100%; border-collapse: collapse; font-size: 0.7em; margin-top: 4px; }
+    .fixture-table th, .fixture-table td { border: 1px solid #ccc; padding: 2px 3px; text-align: center; }
+    .fixture-table th { background-color: #f8f9fa; }
+    .fixture-team-name { text-align: left; width: 40%; font-size: 0.8em;}
+    .fixture-score { text-align: center; width: 20%; font-weight: bold; font-size: 0.8em; }
+    @media print { body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .grid-container { display: block; } section { padding: 0; margin-bottom: 0.5em; } h1, h2 { page-break-after: avoid; } }
   `;
 
   return {

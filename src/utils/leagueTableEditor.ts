@@ -1,7 +1,9 @@
+// utils/leagueTableEditor.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/leagueTableEditor.ts
-import { LeagueCompetition, LeagueGroup, LeagueMatch } from 'types';
-import { deepClone } from 'utils/deepClone';
-import { generateFixturesForGroup } from 'utils/leagueGenerator';
+import { LeagueCompetition, LeagueGroup, LeagueMatch } from '@/types';
+import { deepClone } from '@/utils/deepClone';
+import { generateFixturesForGroup } from '@/utils/leagueGenerator';
 
 const addMinutesToTime = (time: string, minutes: number): string => {
     const [hours, mins] = time.split(':').map(Number);

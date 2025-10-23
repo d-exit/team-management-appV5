@@ -1,3 +1,5 @@
+// utils/deepClone.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/deepClone.ts
 /**
  * Performs a deep copy of a given object. This is a safe replacement

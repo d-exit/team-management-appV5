@@ -1,7 +1,9 @@
+// utils/guidelineFormatter.ts
+// ...ver4の正しい内容をここに挿入...
 // src/utils/guidelineFormatter.ts
-import { TournamentInfoFormData, TournamentBracket, LeagueTable } from 'types';
-import { formatBracketForChat } from 'utils/bracketFormatter';
-import { formatLeagueForChat } from 'utils/leagueFormatter';
+import { TournamentInfoFormData, TournamentBracket, LeagueTable } from '@/types';
+import { formatBracketForChat } from '@/utils/bracketFormatter';
+import { formatLeagueForChat } from '@/utils/leagueFormatter';
 
 /**
  * Formats tournament guideline data into a readable text message for chat.
