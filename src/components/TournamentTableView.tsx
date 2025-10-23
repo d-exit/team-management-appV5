@@ -58,7 +58,7 @@ const TournamentTableView: React.FC<TournamentTableViewProps> = ({
       team1Stats.total++;
       team2Stats.total++;
       
-      if (match.team1Score > match.team2Score) {
+      if ((match.team1Score ?? 0) > (match.team2Score ?? 0)) {
         team1Stats.wins++;
         team2Stats.losses++;
       } else {

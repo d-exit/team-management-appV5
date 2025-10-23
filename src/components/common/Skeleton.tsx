@@ -28,17 +28,9 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   }
 
   return (
-    <motion.div
+    <div
       className={baseClasses}
       style={{ width, height }}
-      animate={{
-        opacity: [0.5, 1, 0.5]
-      }}
-      transition={{
-        duration: 1.5,
-        repeat: Infinity,
-        ease: 'easeInOut'
-      }}
     />
   )
 }
