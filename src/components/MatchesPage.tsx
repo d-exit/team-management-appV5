@@ -100,7 +100,7 @@ const BasicInfoStep: React.FC<{
     onChange({ ...data, [field]: value });
   };
 
-  const canProceed = data.name && data.date && data.startTime && data.opponentTeamIds.length > 0 && data.location;
+  const canProceed = data.name && data.date && data.startTime && data.location;
 
   // 利用可能なチーム（自チームは除外）
   const availableTeams = teams.filter(team => team.id !== managedTeam.id);
@@ -160,9 +160,44 @@ const BasicInfoStep: React.FC<{
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">対戦相手 *</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">対戦相手</label>
           <div className="space-y-4">
-            {/* 検索機能 */}
+            {/* 対戦相手選択方法 */}
+            <div className="flex gap-4 mb-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="opponentSelection"
+                  value="select"
+                  checked={data.opponentTeamIds.length > 0}
+                  onChange={() => {
+                    if (data.opponentTeamIds.length === 0) {
+                      handleChange('opponentTeamIds', [managedTeam.id]);
+                    }
+                  }}
+                  className="mr-2"
+                />
+                <span className="text-slate-300">チームを選択</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="opponentSelection"
+                  value="recruit"
+                  checked={data.opponentTeamIds.length === 0}
+                  onChange={() => {
+                    handleChange('opponentTeamIds', []);
+                  }}
+                  className="mr-2"
+                />
+                <span className="text-slate-300">マッチングで募集</span>
+              </label>
+            </div>
+
+            {/* チーム選択時のみ表示 */}
+            {data.opponentTeamIds.length > 0 && (
+              <>
+                {/* 検索機能 */}
         <div>
           <input
             type="text"
@@ -218,8 +253,22 @@ const BasicInfoStep: React.FC<{
                   </button>
                 ))}
             </div>
+              </>
+            )}
+
+            {/* マッチングで募集時のみ表示 */}
+            {data.opponentTeamIds.length === 0 && (
+              <div className="p-4 bg-slate-700 rounded-lg border border-slate-600">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sky-400">📢</span>
+                  <span className="text-slate-300 font-medium">マッチングで募集</span>
+                </div>
+                <p className="text-slate-400 text-sm">
+                  この試合はマッチングページで他のチームに表示され、対戦相手を募集できます。
+                </p>
+              </div>
+            )}
           </div>
-        </div>
 
           <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">会場 *</label>
@@ -3052,6 +3101,7 @@ const MatchCreationModal: React.FC<{
         participants: editingMatch?.participants || [],
         hostTeamId: managedTeam.id, // 主催チームIDを設定
         isInvitation: false, // 主催の試合なので招待ではない
+        isRecruiting: creationState.basicInfo.opponentTeamIds.length === 0, // 対戦相手がいない場合は募集中
         numberOfCourts: creationState.details.courtCount,
         matchDurationInMinutes: creationState.details.matchDuration,
         halftimeInMinutes: creationState.details.hasHalfTime ? creationState.details.halfTimeDuration : undefined,

@@ -2,6 +2,23 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, MapPin, Users, Calendar, Award } from 'lucide-react';
 
+interface MatchmakingMatch {
+  id: string;
+  name: string;
+  date: string;
+  time: string;
+  location: string;
+  hostTeamId: string;
+  hostTeamName: string;
+  hostTeamLevel: string;
+  matchType: 'training' | 'league' | 'tournament';
+  courtCount: number;
+  matchDuration: number;
+  breakTime: number;
+  description?: string;
+  isRecruiting: boolean;
+}
+
 interface MatchmakingTeam {
   id: string;
   name: string;
@@ -26,9 +43,65 @@ interface MatchmakingPageProps {
   onSelectTeam?: (team: MatchmakingTeam, filters: any) => void;
   onFollowTeam?: (teamId: string) => void;
   followedTeams?: { id: string; isFollowed?: boolean }[];
+  matches?: any[]; // 試合データを追加
+  teams?: any[]; // チームデータを追加
 }
 
-export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSelectTeam, onFollowTeam, followedTeams }) => {
+export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSelectTeam, onFollowTeam, followedTeams, matches, teams: propTeams }) => {
+  const [viewMode, setViewMode] = useState<'teams' | 'matches'>('teams');
+  
+  // モック試合データ
+  const [recruitingMatches, setRecruitingMatches] = useState<MatchmakingMatch[]>([
+    {
+      id: 'match-1',
+      name: '練習試合募集',
+      date: '2024-01-15',
+      time: '14:00',
+      location: '市営グラウンドA',
+      hostTeamId: 'team-2',
+      hostTeamName: 'オーシャンズFC',
+      hostTeamLevel: '中級',
+      matchType: 'training',
+      courtCount: 1,
+      matchDuration: 90,
+      breakTime: 15,
+      description: '練習試合を募集しています。初心者歓迎！',
+      isRecruiting: true
+    },
+    {
+      id: 'match-2',
+      name: 'リーグ戦 第3節',
+      date: '2024-01-20',
+      time: '10:00',
+      location: 'スポーツセンター',
+      hostTeamId: 'team-3',
+      hostTeamName: 'マウンテンキングス',
+      hostTeamLevel: '上級',
+      matchType: 'league',
+      courtCount: 2,
+      matchDuration: 60,
+      breakTime: 10,
+      description: 'リーグ戦の対戦相手を募集',
+      isRecruiting: true
+    },
+    {
+      id: 'match-3',
+      name: 'トーナメント予選',
+      date: '2024-01-25',
+      time: '09:00',
+      location: '県営競技場',
+      hostTeamId: 'team-4',
+      hostTeamName: 'サンダーボルトFC',
+      hostTeamLevel: '中級',
+      matchType: 'tournament',
+      courtCount: 3,
+      matchDuration: 45,
+      breakTime: 5,
+      description: 'トーナメント予選の参加チームを募集',
+      isRecruiting: true
+    }
+  ]);
+  
   const [teams, setTeams] = useState<MatchmakingTeam[]>([
     {
       id: '1',
@@ -227,6 +300,13 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<MatchmakingTeam | null>(null);
+  
+  // 試合用フィルター
+  const [matchSearchTerm, setMatchSearchTerm] = useState('');
+  const [selectedMatchTypes, setSelectedMatchTypes] = useState<string[]>([]);
+  const [selectedMatchDates, setSelectedMatchDates] = useState<string[]>([]);
+  const [selectedMatchLevels, setSelectedMatchLevels] = useState<string[]>([]);
+  const [selectedMatchAreas, setSelectedMatchAreas] = useState<string[]>([]);
 
   const prefectures = [
     '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
@@ -364,6 +444,27 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
     });
   }, [teams, searchQuery, filters]);
 
+  // 試合フィルタリング
+  const filteredMatches = useMemo(() => {
+    return recruitingMatches.filter(match => {
+      const matchesSearch = matchSearchTerm === '' || 
+        match.name.toLowerCase().includes(matchSearchTerm.toLowerCase()) ||
+        match.hostTeamName.toLowerCase().includes(matchSearchTerm.toLowerCase()) ||
+        match.location.toLowerCase().includes(matchSearchTerm.toLowerCase());
+      
+      const matchesType = selectedMatchTypes.length === 0 || 
+        selectedMatchTypes.includes(match.matchType);
+      
+      const matchesLevel = selectedMatchLevels.length === 0 || 
+        selectedMatchLevels.includes(match.hostTeamLevel);
+      
+      const matchesArea = selectedMatchAreas.length === 0 || 
+        selectedMatchAreas.some(area => match.location.includes(area));
+      
+      return matchesSearch && matchesType && matchesLevel && matchesArea;
+    });
+  }, [recruitingMatches, matchSearchTerm, selectedMatchTypes, selectedMatchLevels, selectedMatchAreas]);
+
   const handleFollow = (teamId: string) => {
     setTeams(prev => prev.map(team => 
       team.id === teamId ? { ...team, isFollowed: !team.isFollowed } : team
@@ -418,6 +519,32 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
             className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
           >
             戻る
+          </button>
+        </div>
+
+        {/* チーム・試合選択 */}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => setViewMode('teams')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              viewMode === 'teams'
+                ? 'bg-sky-500 text-white'
+                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            }`}
+          >
+            <Users className="inline-block w-5 h-5 mr-2" />
+            チームを探す
+          </button>
+          <button
+            onClick={() => setViewMode('matches')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              viewMode === 'matches'
+                ? 'bg-sky-500 text-white'
+                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            }`}
+          >
+            <Calendar className="inline-block w-5 h-5 mr-2" />
+            試合を探す
           </button>
         </div>
 

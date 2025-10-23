@@ -318,6 +318,7 @@ export interface Match {
   hostTeamId?: string; // 主催チームID
   isInvitation?: boolean; // 招待の試合かどうか
   invitationStatus?: 'pending' | 'accepted' | 'declined'; // 招待の状態
+  isRecruiting?: boolean; // マッチングで募集中かどうか
   // --- 練習試合用: サブ試合リスト ---
   subMatches?: SubMatch[]; // type === TRAINING のときのみ利用
   // --- 従来の単一試合用（リーグ・トーナメント・旧練習試合）---
