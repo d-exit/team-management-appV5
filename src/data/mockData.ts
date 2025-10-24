@@ -395,6 +395,39 @@ export const mockMatches: Match[] = [
     hostTeamId: 'team-1', // 主催チーム
     isInvitation: false,
   },
+  // 募集中の試合
+  {
+    id: 'match-recruiting-1',
+    type: MatchType.TRAINING,
+    status: MatchStatus.PREPARATION,
+    ourTeamId: 'team-1',
+    date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Two weeks from now
+    time: '15:00',
+    location: '練習試合募集',
+    hostTeamId: 'team-1', // 主催チーム
+    isInvitation: false,
+    isRecruiting: true, // 募集中フラグ
+    numberOfCourts: 2,
+    matchDurationInMinutes: 90,
+    halftimeInMinutes: 15,
+    restTimeInMinutes: 10,
+  },
+  {
+    id: 'match-recruiting-2',
+    type: MatchType.LEAGUE,
+    status: MatchStatus.PREPARATION,
+    ourTeamId: 'team-1',
+    date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Three weeks from now
+    time: '13:00',
+    location: 'リーグ戦募集',
+    hostTeamId: 'team-1', // 主催チーム
+    isInvitation: false,
+    isRecruiting: true, // 募集中フラグ
+    numberOfCourts: 3,
+    matchDurationInMinutes: 90,
+    halftimeInMinutes: 15,
+    restTimeInMinutes: 10,
+  },
   // 招待された試合のサンプル（保留中）
   {
     id: 'match-invitation-1',

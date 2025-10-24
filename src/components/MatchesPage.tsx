@@ -1,10 +1,11 @@
 // src/components/MatchesPage.tsx
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Team, Match, MatchStatus, MatchType, View, FollowedTeam, ChatThread, ChatMessage, ParticipantStatus } from '../types';
+import { Team, Match, MatchStatus, MatchType, View, FollowedTeam, ChatThread, ChatMessage, ParticipantStatus, MatchApplication } from '../types';
 import { generateTournamentBracket } from '../utils/bracketGenerator';
 import { generateLeagueTable } from '../utils/leagueGenerator';
 import { downloadTableAsPdf, downloadTableAsPdfWithPrint } from '../utils/downloadHtmlAsPdf';
 import { Calendar, Clock, MapPin, Users, Trophy, FileText, MessageSquare, Mail, Save, Edit, ArrowLeft, ArrowRight, CheckCircle, Circle, Plus } from 'lucide-react';
+import { ApplicationManagementModal } from './ApplicationManagementModal';
 
 interface MatchesPageProps {
   matches: Match[];
@@ -268,19 +269,20 @@ const BasicInfoStep: React.FC<{
                 </p>
               </div>
             )}
+          </div>
         </div>
 
-          <div>
+        <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">会場 *</label>
-            <input
+          <input
             type="text"
             value={data.location}
             onChange={(e) => handleChange('location', e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             placeholder="例: 〇〇体育館"
-            />
+          />
         </div>
-          </div>
+      </div>
           
       <div className="bg-slate-800 rounded-lg p-4">
         <h4 className="text-sm font-medium text-sky-300 mb-2">自動機能</h4>
@@ -3074,8 +3076,7 @@ const MatchCreationModal: React.FC<{
     
     // 基本情報が入力されている場合は試合を登録
     if (creationState.basicInfo.name && creationState.basicInfo.date && 
-        creationState.basicInfo.startTime && creationState.basicInfo.opponentTeamIds.length > 0 && 
-        creationState.basicInfo.location) {
+        creationState.basicInfo.startTime && creationState.basicInfo.location) {
       
       // recordsステップの情報を取得
       const recordsData = creationState.records;
@@ -3410,6 +3411,135 @@ const MatchesPage: React.FC<MatchesPageProps> = ({
 }) => {
   const [isMatchCreationModalOpen, setIsMatchCreationModalOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showInactiveMatches, setShowInactiveMatches] = useState(false);
+  const [selectedMatchForApplications, setSelectedMatchForApplications] = useState<Match | null>(null);
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
+
+  // モック応募データ
+  const [matchApplications, setMatchApplications] = useState<MatchApplication[]>([
+    {
+      id: 'app-1',
+      matchId: 'match-recruiting-1',
+      applicantTeamId: 'team-1',
+      applicantTeamName: 'サンダーFC',
+      applicantTeamLevel: 'intermediate',
+      applicantTeamPrefecture: '東京都',
+      applicantTeamCity: '渋谷区',
+      applicantTeamDescription: '週末に活動しているアマチュアサッカーチームです。楽しくプレイすることを重視しています。',
+      applicantTeamRating: 0.75,
+      applicantTeamMemberCount: 15,
+      applicationDate: '2024-01-10',
+      status: 'pending',
+      hostTeamId: managedTeam.id
+    },
+    {
+      id: 'app-2',
+      matchId: 'match-recruiting-1',
+      applicantTeamId: 'team-2',
+      applicantTeamName: 'ライオンズ',
+      applicantTeamLevel: 'beginner',
+      applicantTeamPrefecture: '神奈川県',
+      applicantTeamCity: '横浜市',
+      applicantTeamDescription: '初心者中心のチームです。基礎から学びたい方歓迎！',
+      applicantTeamRating: 0.45,
+      applicantTeamMemberCount: 12,
+      applicationDate: '2024-01-11',
+      status: 'pending',
+      hostTeamId: managedTeam.id
+    },
+    {
+      id: 'app-3',
+      matchId: 'match-recruiting-1',
+      applicantTeamId: 'team-3',
+      applicantTeamName: 'エイグルス',
+      applicantTeamLevel: 'advanced',
+      applicantTeamPrefecture: '埼玉県',
+      applicantTeamCity: 'さいたま市',
+      applicantTeamDescription: '競技志向のチームです。技術向上と勝利を目指しています。',
+      applicantTeamRating: 0.85,
+      applicantTeamMemberCount: 18,
+      applicationDate: '2024-01-12',
+      status: 'pending',
+      hostTeamId: managedTeam.id
+    },
+    {
+      id: 'app-4',
+      matchId: 'match-recruiting-1',
+      applicantTeamId: 'team-4',
+      applicantTeamName: 'ファイヤーバーズ',
+      applicantTeamLevel: 'intermediate',
+      applicantTeamPrefecture: '千葉県',
+      applicantTeamCity: '千葉市',
+      applicantTeamDescription: '地域密着型のチームです。老若男女問わず参加できます。',
+      applicantTeamRating: 0.65,
+      applicantTeamMemberCount: 20,
+      applicationDate: '2024-01-13',
+      status: 'accepted',
+      hostTeamId: managedTeam.id
+    },
+    {
+      id: 'app-5',
+      matchId: 'match-recruiting-1',
+      applicantTeamId: 'team-5',
+      applicantTeamName: 'ストーム',
+      applicantTeamLevel: 'beginner',
+      applicantTeamPrefecture: '茨城県',
+      applicantTeamCity: '水戸市',
+      applicantTeamDescription: '新しく結成されたチームです。一緒に成長していきましょう！',
+      applicantTeamRating: 0.35,
+      applicantTeamMemberCount: 10,
+      applicationDate: '2024-01-14',
+      status: 'declined',
+      declineMessage: '日程が合わないため、今回は見送らせていただきます。',
+      hostTeamId: managedTeam.id
+    },
+    {
+      id: 'app-6',
+      matchId: 'match-recruiting-2',
+      applicantTeamId: 'team-6',
+      applicantTeamName: 'ウィンズ',
+      applicantTeamLevel: 'intermediate',
+      applicantTeamPrefecture: '東京都',
+      applicantTeamCity: '新宿区',
+      applicantTeamDescription: '会社員中心のチームです。平日の夜と週末に活動しています。',
+      applicantTeamRating: 0.70,
+      applicantTeamMemberCount: 14,
+      applicationDate: '2024-01-15',
+      status: 'pending',
+      hostTeamId: managedTeam.id
+    },
+    {
+      id: 'app-7',
+      matchId: 'match-recruiting-2',
+      applicantTeamId: 'team-7',
+      applicantTeamName: 'レイダーズ',
+      applicantTeamLevel: 'advanced',
+      applicantTeamPrefecture: '神奈川県',
+      applicantTeamCity: '川崎市',
+      applicantTeamDescription: '経験豊富なメンバーが集まったチームです。戦術的なプレイを重視しています。',
+      applicantTeamRating: 0.90,
+      applicantTeamMemberCount: 16,
+      applicationDate: '2024-01-16',
+      status: 'pending',
+      hostTeamId: managedTeam.id
+    },
+    {
+      id: 'app-8',
+      matchId: 'match-recruiting-2',
+      applicantTeamId: 'team-8',
+      applicantTeamName: 'スパルタンズ',
+      applicantTeamLevel: 'beginner',
+      applicantTeamPrefecture: '栃木県',
+      applicantTeamCity: '宇都宮市',
+      applicantTeamDescription: '体力づくりを重視したチームです。基礎体力の向上を目指しています。',
+      applicantTeamRating: 0.50,
+      applicantTeamMemberCount: 13,
+      applicationDate: '2024-01-17',
+      status: 'pending',
+      hostTeamId: managedTeam.id
+    }
+  ]);
 
   const handleCreateMatch = (newMatch: Match) => {
     if (editingMatch) {
@@ -3449,11 +3579,81 @@ const MatchesPage: React.FC<MatchesPageProps> = ({
     ));
   };
 
-  // 主催の試合と招待の試合を分ける
-  const hostedMatches = matches.filter(match => 
-    match.hostTeamId === managedTeam.id || !match.isInvitation
+  const handleOpenApplicationManagement = (match: Match) => {
+    setSelectedMatchForApplications(match);
+    setIsApplicationModalOpen(true);
+  };
+
+  const handleAcceptApplication = (applicationId: string) => {
+    setMatchApplications(prev => prev.map(app => 
+      app.id === applicationId 
+        ? { ...app, status: 'accepted' as const }
+        : app
+    ));
+    console.log('Application accepted:', applicationId);
+  };
+
+  const handleDeclineApplication = (applicationId: string, message: string) => {
+    setMatchApplications(prev => prev.map(app => 
+      app.id === applicationId 
+        ? { ...app, status: 'declined' as const, declineMessage: message }
+        : app
+    ));
+    console.log('Application declined:', applicationId, message);
+  };
+
+  // 試合を新しい分類で分ける
+  const activeMatches = matches.filter(match => {
+    // 結果登録済みや辞退済みは非アクティブ
+    if (match.status === MatchStatus.FINISHED || match.invitationStatus === 'declined') {
+      return false;
+    }
+    return true;
+  });
+
+  const inactiveMatches = matches.filter(match => {
+    // 結果登録済みや辞退済みは非アクティブ
+    return match.status === MatchStatus.FINISHED || match.invitationStatus === 'declined';
+  });
+
+  // アクティブな試合をさらに分類
+  const recruitingMatches = activeMatches.filter(match => 
+    match.isRecruiting && match.hostTeamId === managedTeam.id
   );
-  const invitedMatches = matches.filter(match => 
+  
+  const hostedMatches = activeMatches.filter(match => 
+    match.hostTeamId === managedTeam.id && !match.isRecruiting
+  );
+  
+  const invitedMatches = activeMatches.filter(match => 
+    match.isInvitation && match.hostTeamId !== managedTeam.id
+  );
+
+  // 検索機能
+  const filteredMatches = useMemo(() => {
+    if (!searchTerm) {
+      return showInactiveMatches ? inactiveMatches : activeMatches;
+    }
+    
+    const allMatches = showInactiveMatches ? [...activeMatches, ...inactiveMatches] : activeMatches;
+    return allMatches.filter(match => 
+      match.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (match.opponentTeamName && match.opponentTeamName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      match.date.includes(searchTerm) ||
+      match.time.includes(searchTerm)
+    );
+  }, [searchTerm, showInactiveMatches, activeMatches, inactiveMatches]);
+
+  // 検索結果を分類
+  const filteredRecruitingMatches = filteredMatches.filter(match => 
+    match.isRecruiting && match.hostTeamId === managedTeam.id
+  );
+  
+  const filteredHostedMatches = filteredMatches.filter(match => 
+    match.hostTeamId === managedTeam.id && !match.isRecruiting
+  );
+  
+  const filteredInvitedMatches = filteredMatches.filter(match => 
     match.isInvitation && match.hostTeamId !== managedTeam.id
   );
 
@@ -3477,13 +3677,95 @@ const MatchesPage: React.FC<MatchesPageProps> = ({
             新規試合作成
           </button>
         </div>
+
+        {/* 検索バーとフィルター */}
+        <div className="mb-6">
+          <div className="flex gap-4 items-center">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="試合名、会場、対戦相手、日時で検索..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-sky-500"
+              />
+            </div>
+            <button
+              onClick={() => setShowInactiveMatches(!showInactiveMatches)}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                showInactiveMatches 
+                  ? 'bg-slate-600 text-white' 
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              {showInactiveMatches ? '完了済み試合を非表示' : '完了済み試合を表示'}
+            </button>
+          </div>
+        </div>
             
+        {/* 募集中の試合 */}
+        {filteredRecruitingMatches.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-purple-400 mb-4">募集中の試合</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredRecruitingMatches.map(match => (
+                <div key={match.id} className="bg-gradient-to-br from-purple-900/30 to-slate-800 border-2 border-purple-500/50 rounded-xl p-6 shadow-2xl hover:shadow-3xl transition-shadow">
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center justify-between">
+                      <span className="px-3 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">募集中</span>
+                      <span className="px-2 py-1 bg-slate-600 text-slate-300 text-xs rounded-full">
+                        応募: {matchApplications.filter(app => app.matchId === match.id && app.status === 'pending').length}件
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-white text-lg">{match.location}</h3>
+                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                      <Calendar className="h-4 w-4" />
+                      <span>{match.date}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                      <Clock className="h-4 w-4" />
+                      <span>{match.time}</span>
+                    </div>
+                    {match.location && (
+                      <div className="flex items-center gap-2 text-sm text-slate-300">
+                        <MapPin className="h-4 w-4" />
+                        <span>{match.location}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEditingMatch(match)}
+                      className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm"
+                    >
+                      編集
+                    </button>
+                    <button
+                      onClick={() => onEditGuideline(match.id)}
+                      className="flex-1 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors text-sm"
+                    >
+                      要項
+                    </button>
+                    <button
+                      onClick={() => handleOpenApplicationManagement(match)}
+                      className="flex-1 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm"
+                    >
+                      応募管理
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 招待された試合 */}
-        {invitedMatches.length > 0 && (
+        {filteredInvitedMatches.length > 0 && (
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-amber-400 mb-4">招待された試合</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {invitedMatches.map(match => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredInvitedMatches.map(match => (
                 <div key={match.id} className="bg-gradient-to-br from-amber-900/30 to-slate-800 border-2 border-amber-500/50 rounded-xl p-6 shadow-2xl hover:shadow-3xl transition-shadow">
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center justify-between">
@@ -3547,7 +3829,7 @@ const MatchesPage: React.FC<MatchesPageProps> = ({
           <h2 className="text-2xl font-bold text-sky-400 mb-4">主催の試合</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {hostedMatches.map(match => (
+          {filteredHostedMatches.map(match => (
             <div key={match.id} className="bg-slate-800 rounded-xl p-6 shadow-2xl hover:shadow-3xl transition-shadow">
               <div className="space-y-3 mb-4">
                 <div className="flex items-center justify-between">
@@ -3589,11 +3871,18 @@ const MatchesPage: React.FC<MatchesPageProps> = ({
         </div>
 
         {/* 試合が見つからない場合 */}
-        {matches.length === 0 && (
+        {filteredMatches.length === 0 && (
           <div className="text-center py-12">
             <Calendar className="h-16 w-16 mx-auto mb-4 text-slate-500" />
-            <h3 className="text-xl font-semibold text-slate-300 mb-2">試合が見つかりません</h3>
-            <p className="text-slate-400">新しい試合を作成してください</p>
+            <h3 className="text-xl font-semibold text-slate-300 mb-2">
+              {searchTerm ? '検索結果が見つかりません' : '試合がありません'}
+            </h3>
+            <p className="text-slate-400">
+              {searchTerm 
+                ? '検索条件を変更してお試しください' 
+                : '新しい試合を作成してください'
+              }
+            </p>
           </div>
         )}
       </div>
@@ -3611,6 +3900,23 @@ const MatchesPage: React.FC<MatchesPageProps> = ({
         onAddChatThread={onAddChatThread}
         onSendMessage={onSendMessage}
       />
+
+      {/* 応募管理モーダル */}
+      {selectedMatchForApplications && (
+        <ApplicationManagementModal
+          matchId={selectedMatchForApplications.id}
+          matchName={selectedMatchForApplications.location}
+          applications={matchApplications.filter(app => app.matchId === selectedMatchForApplications.id)}
+          teams={teams}
+          isOpen={isApplicationModalOpen}
+          onClose={() => {
+            setIsApplicationModalOpen(false);
+            setSelectedMatchForApplications(null);
+          }}
+          onAcceptApplication={handleAcceptApplication}
+          onDeclineApplication={handleDeclineApplication}
+        />
+      )}
     </div>
   );
 };

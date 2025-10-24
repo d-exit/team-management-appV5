@@ -295,6 +295,23 @@ export interface SubMatch {
   notes?: string;
 }
 
+export interface MatchApplication {
+  id: string;
+  matchId: string;
+  applicantTeamId: string;
+  applicantTeamName: string;
+  applicantTeamLevel: string;
+  applicantTeamPrefecture: string;
+  applicantTeamCity?: string;
+  applicantTeamDescription?: string;
+  applicantTeamRating: number;
+  applicantTeamMemberCount: number;
+  applicationDate: string;
+  status: 'pending' | 'accepted' | 'declined';
+  declineMessage?: string;
+  hostTeamId: string;
+}
+
 export interface Match {
   id: string;
   type: MatchType;

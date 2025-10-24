@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, MapPin, Users, Calendar, Award } from 'lucide-react';
+import { MatchDetailModal } from './MatchDetailModal';
 
 interface MatchmakingMatch {
   id: string;
@@ -49,6 +50,10 @@ interface MatchmakingPageProps {
 
 export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSelectTeam, onFollowTeam, followedTeams, matches, teams: propTeams }) => {
   const [viewMode, setViewMode] = useState<'teams' | 'matches'>('teams');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [matchSearchTerm, setMatchSearchTerm] = useState('');
+  const [selectedMatch, setSelectedMatch] = useState<MatchmakingMatch | null>(null);
+  const [isMatchDetailOpen, setIsMatchDetailOpen] = useState(false);
   
   // モック試合データ
   const [recruitingMatches, setRecruitingMatches] = useState<MatchmakingMatch[]>([
@@ -286,7 +291,6 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
     }
   }, [followedTeams]);
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
     prefecture: '',
     cities: [] as string[],
@@ -302,7 +306,6 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
   const [selectedTeam, setSelectedTeam] = useState<MatchmakingTeam | null>(null);
   
   // 試合用フィルター
-  const [matchSearchTerm, setMatchSearchTerm] = useState('');
   const [selectedMatchTypes, setSelectedMatchTypes] = useState<string[]>([]);
   const [selectedMatchDates, setSelectedMatchDates] = useState<string[]>([]);
   const [selectedMatchLevels, setSelectedMatchLevels] = useState<string[]>([]);
@@ -476,6 +479,18 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
     }
   };
 
+  const handleMatchDetail = (match: MatchmakingMatch) => {
+    setSelectedMatch(match);
+    setIsMatchDetailOpen(true);
+  };
+
+  const handleMatchApply = (match: MatchmakingMatch) => {
+    console.log('試合に応募:', match);
+    // ここで実際の応募処理を実装
+    alert(`${match.name}に応募しました！主催チームからの連絡をお待ちください。`);
+    setIsMatchDetailOpen(false);
+  };
+
 
 
 
@@ -548,6 +563,7 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
           </button>
         </div>
 
+
         {/* 検索・フィルター */}
         <div className="bg-slate-800 rounded-xl p-6 shadow-2xl mb-8">
           <div className="flex flex-col lg:flex-row gap-4 mb-6">
@@ -557,7 +573,7 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                   <input
                     type="text"
-                    placeholder={viewMode === 'teams' ? "チーム名やコーチ名で検索..." : "試合名やチーム名で検索..."}
+                    placeholder={viewMode === 'teams' ? "チーム名やコーチ名で検索..." : "試合名や会場で検索..."}
                     value={viewMode === 'teams' ? searchQuery : matchSearchTerm}
                     onChange={(e) => {
                       if (viewMode === 'teams') {
@@ -873,10 +889,7 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
                     応募する
                   </button>
                   <button
-                    onClick={() => {
-                      // 試合詳細を表示する処理
-                      alert(`${match.name}の詳細を表示`);
-                    }}
+                    onClick={() => handleMatchDetail(match)}
                     className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm"
                   >
                     詳細
@@ -905,6 +918,14 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
           </div>
         )}
       </div>
+
+      {/* 試合詳細モーダル */}
+      <MatchDetailModal
+        match={selectedMatch}
+        isOpen={isMatchDetailOpen}
+        onClose={() => setIsMatchDetailOpen(false)}
+        onApply={handleMatchApply}
+      />
     </div>
   );
 };

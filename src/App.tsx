@@ -318,10 +318,10 @@ const App: React.FC = () => {
   };
 
   const navigateTo = (view: View) => {
-    // チームに参加していないユーザーがチーム関連の機能にアクセスしようとした場合はチーム招待画面にリダイレクト
-    if (!selectedManagedTeam && view !== View.TEAM_INVITATIONS && view !== View.MEMBER_PROFILE) {
-      console.log('User not in team, redirecting to team invitations');
-      setCurrentView(View.TEAM_INVITATIONS);
+    // チームに参加していないユーザーがチーム関連の機能にアクセスしようとした場合はメンバープロフィール画面にリダイレクト
+    if (!selectedManagedTeam && view !== View.MEMBER_PROFILE) {
+      console.log('User not in team, redirecting to member profile');
+      setCurrentView(View.MEMBER_PROFILE);
       return;
     }
     
@@ -812,9 +812,6 @@ const App: React.FC = () => {
         </header>
 
         <nav className="mb-6 flex flex-wrap justify-center gap-2 sm:gap-3 px-1">
-          {/* チーム招待（全ユーザー向け） */}
-          <NavButton view={View.TEAM_INVITATIONS} label="チーム招待" current={currentView} onClick={navigateTo} />
-          
           {/* 管理者・編集者向け基本機能（チームに参加している場合のみ） */}
           {(currentUserRole === 'admin' || currentUserRole === 'editor') && selectedManagedTeam && (
             <>
@@ -856,19 +853,16 @@ const App: React.FC = () => {
           )}
           
           {/* チームに参加していないユーザー向けのメッセージ */}
-          {!selectedManagedTeam && currentView !== View.TEAM_INVITATIONS && currentView !== View.MEMBER_PROFILE && (
+          {!selectedManagedTeam && currentView !== View.MEMBER_PROFILE && (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
               <div className="text-center max-w-md mx-auto p-6">
                 <h2 className="text-2xl font-bold text-sky-400 mb-4">チームに参加してください</h2>
                 <p className="text-slate-300 mb-6">
                   チームの機能を利用するには、まずチームに招待される必要があります。
                 </p>
-                <button
-                  onClick={() => navigateTo(View.TEAM_INVITATIONS)}
-                  className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-colors font-medium"
-                >
-                  チーム招待を確認
-                </button>
+                <p className="text-slate-400 text-sm">
+                  管理者からチーム招待が送信された場合は、メールでご確認ください。
+                </p>
               </div>
             </div>
           )}
@@ -952,8 +946,6 @@ const App: React.FC = () => {
                onSelectTeam={handleSelectTeamFromMatching}
                onFollowTeam={toggleFollowTeamById}
                followedTeams={followedTeams}
-               matches={matches}
-               teams={teams}
              />
           )}
           
