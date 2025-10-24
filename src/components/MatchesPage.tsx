@@ -197,7 +197,7 @@ const BasicInfoStep: React.FC<{
             {/* チーム選択時のみ表示 */}
             {data.opponentTeamIds.length > 0 && (
               <>
-                {/* 検索機能 */}
+            {/* 検索機能 */}
         <div>
           <input
             type="text"
@@ -262,13 +262,13 @@ const BasicInfoStep: React.FC<{
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-sky-400">📢</span>
                   <span className="text-slate-300 font-medium">マッチングで募集</span>
-                </div>
+          </div>
                 <p className="text-slate-400 text-sm">
                   この試合はマッチングページで他のチームに表示され、対戦相手を募集できます。
                 </p>
               </div>
             )}
-          </div>
+        </div>
 
           <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">会場 *</label>
@@ -295,15 +295,15 @@ const BasicInfoStep: React.FC<{
             </button>
           </div>
           {data.createGroupChat && (
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
               <span className="text-slate-300">対戦相手への招待メールを送信</span>
-              <button
+            <button
                 onClick={onSendInviteEmail}
-                className="px-3 py-1 bg-sky-500 hover:bg-sky-600 text-white rounded text-sm"
-              >
-                実施
-              </button>
-            </div>
+              className="px-3 py-1 bg-sky-500 hover:bg-sky-600 text-white rounded text-sm"
+            >
+              実施
+            </button>
+          </div>
           )}
           <div className="flex items-center justify-between">
             <span className="text-slate-300">スケジュールに自動反映</span>
@@ -985,7 +985,7 @@ const GuidelinesWizard: React.FC<{
                   onChange={(e) => handleInputChange('courtCount', e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg"
                 />
-                </div>
+          </div>
           </div>
 
             {/* 開催情報 */}
@@ -1012,7 +1012,7 @@ const GuidelinesWizard: React.FC<{
                   onChange={(e) => handleInputChange('startTime', e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg"
                 />
-                    </div>
+                </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   終了時刻
@@ -1023,7 +1023,7 @@ const GuidelinesWizard: React.FC<{
                   onChange={(e) => handleInputChange('endTime', e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg"
                 />
-                    </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   入場・受付時刻
@@ -1034,7 +1034,7 @@ const GuidelinesWizard: React.FC<{
                   onChange={(e) => handleInputChange('entryTime', e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg"
                 />
-                    </div>
+              </div>
             </div>
 
             {/* 競技情報 */}
@@ -1082,8 +1082,8 @@ const GuidelinesWizard: React.FC<{
                   value={guidelinesData.coolingBreak}
                   onChange={(e) => handleInputChange('coolingBreak', e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-white rounded-lg"
-                />
-              </div>
+                        />
+                      </div>
             </div>
 
             {/* 参加資格 */}
@@ -1491,8 +1491,8 @@ const BracketWizard: React.FC<{
       console.log('リーグ戦生成結果:', leagueTable);
       
       if (leagueTable) {
-        let matchOrder = 1;
-        
+      let matchOrder = 1;
+      
         // 各グループの試合を収集
         leagueTable.groups.forEach((group, groupIndex) => {
           console.log(`グループ ${groupIndex + 1} の試合数:`, group.matches.length);
@@ -1502,16 +1502,16 @@ const BracketWizard: React.FC<{
             const team2 = teams.find(t => t.id === match.team2Id);
             
             if (team1 && team2) {
-              matches.push({
-                id: `match_${matchOrder}`,
+            matches.push({
+              id: `match_${matchOrder}`,
                 team1: team1.name,
                 team2: team2.name,
                 court: match.court || ((matchOrder - 1) % bracketData.courtCount) + 1,
                 startTime: match.startTime || calculateStartTime(matchOrder),
-                order: matchOrder,
-              });
-              matchOrder++;
-            }
+              order: matchOrder,
+            });
+            matchOrder++;
+          }
           });
         });
         
@@ -1805,7 +1805,7 @@ const BracketWizard: React.FC<{
           groupTeams = sortedTeamNames.slice(0, firstGroupSize);
         } else {
           // 残りのグループは通常の計算
-          const startIdx = group * teamsPerGroup;
+        const startIdx = group * teamsPerGroup;
           const endIdx = Math.min(startIdx + teamsPerGroup, sortedTeamNames.length);
           groupTeams = sortedTeamNames.slice(startIdx, endIdx);
         }
@@ -2666,7 +2666,7 @@ const RecordsStep: React.FC<{
       <div className="flex items-center gap-2 mb-6">
         <CheckCircle className="h-5 w-5 text-sky-500" />
         <h3 className="text-xl font-semibold">ステップ4: 試合記録</h3>
-      </div>
+                        </div>
 
       <div className="bg-slate-800 rounded-lg p-6">
         <h4 className="text-lg font-medium text-white mb-4">結果入力</h4>
@@ -2709,55 +2709,55 @@ const RecordsStep: React.FC<{
                   <div className="flex items-center justify-center gap-4">
                     <div className="flex items-center gap-2">
                       <span className="text-slate-300 text-sm w-20 text-right">{fixture.team1}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={result.ourScore}
-                        onChange={(e) => {
-                          const newResults = [...data.results];
-                          newResults[index] = { ...result, ourScore: parseInt(e.target.value) || 0 };
-                          handleChange('results', newResults);
-                        }}
-                        className="w-16 px-2 py-1 bg-slate-600 border border-slate-500 text-white rounded text-center"
-                        placeholder="0"
-                      />
+              <input
+                type="number"
+                min="0"
+                value={result.ourScore}
+                onChange={(e) => {
+                  const newResults = [...data.results];
+                  newResults[index] = { ...result, ourScore: parseInt(e.target.value) || 0 };
+                  handleChange('results', newResults);
+                }}
+                className="w-16 px-2 py-1 bg-slate-600 border border-slate-500 text-white rounded text-center"
+                placeholder="0"
+              />
                     </div>
                     
                     <span className="text-slate-300 text-lg font-bold">-</span>
                     
                     <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        value={result.opponentScore}
-                        onChange={(e) => {
-                          const newResults = [...data.results];
-                          newResults[index] = { ...result, opponentScore: parseInt(e.target.value) || 0 };
-                          handleChange('results', newResults);
-                        }}
-                        className="w-16 px-2 py-1 bg-slate-600 border border-slate-500 text-white rounded text-center"
-                        placeholder="0"
-                      />
+              <input
+                type="number"
+                min="0"
+                value={result.opponentScore}
+                onChange={(e) => {
+                  const newResults = [...data.results];
+                  newResults[index] = { ...result, opponentScore: parseInt(e.target.value) || 0 };
+                  handleChange('results', newResults);
+                }}
+                className="w-16 px-2 py-1 bg-slate-600 border border-slate-500 text-white rounded text-center"
+                placeholder="0"
+              />
                       <span className="text-slate-300 text-sm w-20">{fixture.team2}</span>
                     </div>
                   </div>
                   
                   {/* 勝敗選択 */}
                   <div className="flex justify-center mt-4">
-                    <select
-                      value={result.winner}
-                      onChange={(e) => {
-                        const newResults = [...data.results];
-                        newResults[index] = { ...result, winner: e.target.value as 'our' | 'opponent' | 'draw' };
-                        handleChange('results', newResults);
-                      }}
+              <select
+                value={result.winner}
+                onChange={(e) => {
+                  const newResults = [...data.results];
+                  newResults[index] = { ...result, winner: e.target.value as 'our' | 'opponent' | 'draw' };
+                  handleChange('results', newResults);
+                }}
                       className="px-4 py-2 bg-slate-600 border border-slate-500 text-white rounded"
-                    >
+              >
                       <option value="our">{fixture.team1} の勝ち</option>
                       <option value="opponent">{fixture.team2} の勝ち</option>
-                      <option value="draw">引き分け</option>
-                    </select>
-                  </div>
+                <option value="draw">引き分け</option>
+              </select>
+                      </div>
 
                   {/* 得点記録セクション */}
                   {result.ourScore > 0 && (
@@ -2953,7 +2953,7 @@ const MatchCreationModal: React.FC<{
       date: '',
       startTime: '',
       endTime: '',
-      opponentTeamIds: [], // 空配列で初期化（マッチング募集をデフォルトに）
+        opponentTeamIds: [], // 空配列で初期化（マッチング募集をデフォルトに）
       location: '',
       sendInviteEmail: true,
       createGroupChat: true,
@@ -3417,7 +3417,7 @@ const MatchesPage: React.FC<MatchesPageProps> = ({
       onUpdateMatches(prev => prev.map(m => m.id === editingMatch.id ? newMatch : m));
     } else {
       // 新規作成の場合は追加
-      onUpdateMatches(prev => [newMatch, ...prev]);
+    onUpdateMatches(prev => [newMatch, ...prev]);
     }
     setEditingMatch(null);
   };
@@ -3477,12 +3477,12 @@ const MatchesPage: React.FC<MatchesPageProps> = ({
             新規試合作成
           </button>
         </div>
-
+            
         {/* 招待された試合 */}
         {invitedMatches.length > 0 && (
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-amber-400 mb-4">招待された試合</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {invitedMatches.map(match => (
                 <div key={match.id} className="bg-gradient-to-br from-amber-900/30 to-slate-800 border-2 border-amber-500/50 rounded-xl p-6 shadow-2xl hover:shadow-3xl transition-shadow">
                   <div className="space-y-3 mb-4">

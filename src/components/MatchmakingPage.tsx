@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, MapPin, Users, Calendar, Award } from 'lucide-react';
+import { MatchType } from '../types';
 
 interface MatchmakingMatch {
   id: string;
@@ -50,57 +51,29 @@ interface MatchmakingPageProps {
 export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSelectTeam, onFollowTeam, followedTeams, matches, teams: propTeams }) => {
   const [viewMode, setViewMode] = useState<'teams' | 'matches'>('teams');
   
-  // モック試合データ
-  const [recruitingMatches, setRecruitingMatches] = useState<MatchmakingMatch[]>([
-    {
-      id: 'match-1',
-      name: '練習試合募集',
-      date: '2024-01-15',
-      time: '14:00',
-      location: '市営グラウンドA',
-      hostTeamId: 'team-2',
-      hostTeamName: 'オーシャンズFC',
-      hostTeamLevel: '中級',
-      matchType: 'training',
-      courtCount: 1,
-      matchDuration: 90,
-      breakTime: 15,
-      description: '練習試合を募集しています。初心者歓迎！',
-      isRecruiting: true
-    },
-    {
-      id: 'match-2',
-      name: 'リーグ戦 第3節',
-      date: '2024-01-20',
-      time: '10:00',
-      location: 'スポーツセンター',
-      hostTeamId: 'team-3',
-      hostTeamName: 'マウンテンキングス',
-      hostTeamLevel: '上級',
-      matchType: 'league',
-      courtCount: 2,
-      matchDuration: 60,
-      breakTime: 10,
-      description: 'リーグ戦の対戦相手を募集',
-      isRecruiting: true
-    },
-    {
-      id: 'match-3',
-      name: 'トーナメント予選',
-      date: '2024-01-25',
-      time: '09:00',
-      location: '県営競技場',
-      hostTeamId: 'team-4',
-      hostTeamName: 'サンダーボルトFC',
-      hostTeamLevel: '中級',
-      matchType: 'tournament',
-      courtCount: 3,
-      matchDuration: 45,
-      breakTime: 5,
-      description: 'トーナメント予選の参加チームを募集',
-      isRecruiting: true
+  // 実際の試合データを使用（propsから取得）
+  const [recruitingMatches, setRecruitingMatches] = useState<MatchmakingMatch[]>(() => {
+    if (matches && matches.length > 0) {
+      return matches.map(match => ({
+        id: match.id,
+        name: match.location || '試合',
+        date: match.date,
+        time: match.time,
+        location: match.location,
+        hostTeamId: match.hostTeamId || '',
+        hostTeamName: propTeams?.find(t => t.id === match.hostTeamId)?.name || '不明',
+        hostTeamLevel: '中級', // デフォルト値
+        matchType: match.type === MatchType.TRAINING ? 'training' : 
+                   match.type === MatchType.LEAGUE ? 'league' : 'tournament',
+        courtCount: match.numberOfCourts || 1,
+        matchDuration: match.matchDurationInMinutes || 60,
+        breakTime: match.restTimeInMinutes || 10,
+        description: '試合の詳細情報',
+        isRecruiting: match.isRecruiting || false
+      }));
     }
-  ]);
+    return []; // デフォルトは空配列
+  });
   
   const [teams, setTeams] = useState<MatchmakingTeam[]>([
     {
@@ -285,6 +258,30 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
       }));
     }
   }, [followedTeams]);
+
+  // 試合データが更新された時にrecruitingMatchesも更新
+  useEffect(() => {
+    if (matches && matches.length > 0) {
+      const updatedMatches = matches.map(match => ({
+        id: match.id,
+        name: match.location || '試合',
+        date: match.date,
+        time: match.time,
+        location: match.location,
+        hostTeamId: match.hostTeamId || '',
+        hostTeamName: propTeams?.find(t => t.id === match.hostTeamId)?.name || '不明',
+        hostTeamLevel: '中級', // デフォルト値
+        matchType: match.type === MatchType.TRAINING ? 'training' : 
+                   match.type === MatchType.LEAGUE ? 'league' : 'tournament',
+        courtCount: match.numberOfCourts || 1,
+        matchDuration: match.matchDurationInMinutes || 60,
+        breakTime: match.restTimeInMinutes || 10,
+        description: '試合の詳細情報',
+        isRecruiting: match.isRecruiting || false
+      }));
+      setRecruitingMatches(updatedMatches);
+    }
+  }, [matches, propTeams]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
@@ -555,19 +552,19 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder={viewMode === 'teams' ? "チーム名やコーチ名で検索..." : "試合名やチーム名で検索..."}
-                  value={viewMode === 'teams' ? searchQuery : matchSearchTerm}
-                  onChange={(e) => {
-                    if (viewMode === 'teams') {
-                      setSearchQuery(e.target.value);
-                    } else {
-                      setMatchSearchTerm(e.target.value);
-                    }
-                  }}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                />
+                 <input
+                   type="text"
+                   placeholder={viewMode === 'teams' ? "チーム名やコーチ名で検索..." : "試合名やチーム名で検索..."}
+                   value={viewMode === 'teams' ? searchQuery : matchSearchTerm}
+                   onChange={(e) => {
+                     if (viewMode === 'teams') {
+                       setSearchQuery(e.target.value);
+                     } else {
+                       setMatchSearchTerm(e.target.value);
+                     }
+                   }}
+                   className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                 />
               </div>
             </div>
           </div>
@@ -719,9 +716,9 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
             >
               フィルターをクリア
             </button>
-            <span className="text-sm text-slate-400">
-              {viewMode === 'teams' ? filteredTeams.length : filteredMatches.length}件の{viewMode === 'teams' ? 'チーム' : '試合'}が見つかりました
-            </span>
+             <span className="text-sm text-slate-400">
+               {viewMode === 'teams' ? filteredTeams.length : filteredMatches.length}件の{viewMode === 'teams' ? 'チーム' : '試合'}が見つかりました
+             </span>
           </div>
         </div>
 
@@ -743,70 +740,69 @@ export const MatchmakingPage: React.FC<MatchmakingPageProps> = ({ onBack, onSele
                       <p className="text-sm text-slate-400">{team.coachName}</p>
                     </div>
                   </div>
-
                 </div>
 
                 {/* チーム情報 */}
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-slate-400" />
-                  <span className="text-slate-300">{team.prefecture} {team.city}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-slate-400" />
-                  <span className="text-slate-300">{team.ageCategory} | {levels.find(l => l.value === team.level)?.label}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Award className="h-4 w-4 text-slate-400" />
-                  <span className="text-slate-300">レーティング: {team.rating * 1000}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-slate-400" />
-                  <span className="text-slate-300">空き日程: {team.availableDates.length}日</span>
-                </div>
-              </div>
-
-              {/* ランキング */}
-              <div className="bg-slate-700 rounded-lg p-3 mb-4">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-slate-400">総合順位:</span>
-                    <span className="text-white ml-2">#{team.overallRank}</span>
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-300">{team.prefecture} {team.city}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-400">都道府県順位:</span>
-                    <span className="text-white ml-2">#{team.prefectureRank}</span>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-300">{team.ageCategory} | {levels.find(l => l.value === team.level)?.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Award className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-300">レーティング: {team.rating * 1000}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-300">空き日程: {team.availableDates.length}日</span>
                   </div>
                 </div>
-              </div>
 
-              {/* 説明 */}
-              {team.description && (
-                <p className="text-sm text-slate-300 mb-4 line-clamp-2">{team.description}</p>
-              )}
+                {/* ランキング */}
+                <div className="bg-slate-700 rounded-lg p-3 mb-4">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-slate-400">総合順位:</span>
+                      <span className="text-white ml-2">#{team.overallRank}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">都道府県順位:</span>
+                      <span className="text-white ml-2">#{team.prefectureRank}</span>
+                    </div>
+                  </div>
+                </div>
 
-              {/* アクションボタン */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleFollow(team.id)}
-                  className={`flex-1 px-4 py-2 rounded-lg transition-colors text-sm ${
-                    team.isFollowed
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                      : 'bg-slate-600 hover:bg-slate-500 text-white'
-                  }`}
-                >
-                  {team.isFollowed ? 'フォロー中' : 'フォロー'}
-                </button>
-                <button
-                  onClick={() => handleViewDetails(team)}
-                  className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm"
-                >
-                  詳細
-                </button>
+                {/* 説明 */}
+                {team.description && (
+                  <p className="text-sm text-slate-300 mb-4 line-clamp-2">{team.description}</p>
+                )}
+
+                {/* アクションボタン */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleFollow(team.id)}
+                    className={`flex-1 px-4 py-2 rounded-lg transition-colors text-sm ${
+                      team.isFollowed
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                        : 'bg-slate-600 hover:bg-slate-500 text-white'
+                    }`}
+                  >
+                    {team.isFollowed ? 'フォロー中' : 'フォロー'}
+                  </button>
+                  <button
+                    onClick={() => handleViewDetails(team)}
+                    className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm"
+                  >
+                    詳細
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
         )}
 
         {/* 試合一覧 */}
