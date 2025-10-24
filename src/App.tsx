@@ -952,7 +952,7 @@ const App: React.FC = () => {
                onSelectTeam={handleSelectTeamFromMatching}
                onFollowTeam={toggleFollowTeamById}
                followedTeams={followedTeams}
-               matches={matches.filter(match => match.isRecruiting)} // 募集中の試合のみ
+               matches={matches}
                teams={teams}
              />
           )}
